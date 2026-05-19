@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karamjot Singh</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --red:      #cc2222;
+  --red-dim:  #7a0f0f;
+  --red-deep: #1e0808;
+  --red-faint:#110505;
+  --white:    #e8e8e8;
+  --mid:      #2e2e2e;
+  --dim:      #1a1a1a;
+  --dimmer:   #111;
+  --track-glow: 0 0 8px rgba(180,20,20,.7), 0 0 22px rgba(130,0,0,.35);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  min-height: 100vh;
+  padding: 56px 28px 100px;
+}
+
+/* ── scanline texture overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.08) 2px,
+    rgba(0,0,0,.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.wrap { max-width: 960px; margin: 0 auto; }
+
+/* ── header ── */
+.hdr { text-align: center; margin-bottom: 56px; }
+.hdr-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.hdr-sub {
+  font-size: 10px;
+  color: #2a2a2a;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.hdr-sub a {
+  color: #2a2a2a;
+  text-decoration: none;
+  transition: color .2s;
+}
+.hdr-sub a:hover { color: var(--red); }
+
+/* ── panel ── */
+.panel {
+  background: #070707;
+  border: 1px solid #111;
+  border-radius: 0;
+  padding: 32px 36px;
+}
+
+/* ── seg label ── */
+.seg-label {
+  font-size: 9px;
+  letter-spacing: .18em;
+  color: #1e1e1e;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* ── scrollable tab row ── */
+.seg-scroll {
+  overflow-x: auto;
+  margin-bottom: 40px;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.seg-scroll::-webkit-scrollbar { display: none; }
+
+.seg {
+  position: relative;
+  display: inline-flex;
+  gap: 32px;
+  white-space: nowrap;
+  min-width: 100%;
+}
+
+.seg-item {
+  color: #232323;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 400;
+  padding: 6px 0;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  transition: color .15s;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  outline: none;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.seg-item:hover { color: #555; }
+.seg-item.active {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.seg-track {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--red-dim) 20%,
+    var(--red) 50%,
+    var(--red-dim) 80%,
+    transparent
+  );
+  border-radius: 0;
+  box-shadow: var(--track-glow);
+  transition:
+    left  .22s cubic-bezier(.4,0,.2,1),
+    width .22s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+
+/* ── content panels ── */
+.content { display: none; }
+.content.active { display: block; }
+
+/* repo meta bar */
+.repo-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #100808;
+}
+.repo-link {
+  font-size: 10px;
+  font-family: inherit;
+  color: #2a2a2a;
+  text-decoration: none;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  transition: color .2s;
+}
+.repo-link:hover { color: var(--red); }
+.repo-count {
+  font-size: 10px;
+  color: #171717;
+  letter-spacing: .08em;
+}
+
+/* chapter groups */
+.group { margin-bottom: 32px; }
+.group-label {
+  font-size: 9px;
+  letter-spacing: .14em;
+  color: var(--red-deep);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #120606;
+}
+
+/* chapter row */
+.ch {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid #0d0d0d;
+  transition: border-color .15s;
+}
+.ch:last-child { border-bottom: none; }
+.ch:hover { border-color: #1e0808; }
+
+.ch-num {
+  font-size: 10px;
+  color: #1c1c1c;
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  flex-shrink: 0;
+  letter-spacing: .04em;
+}
+.ch-link {
+  color: #444;
+  font-size: 12px;
+  font-family: inherit;
+  text-decoration: none;
+  transition: color .15s;
+  flex-shrink: 0;
+  letter-spacing: .03em;
+}
+.ch-link:hover { color: var(--red); }
+.ch-link.planned {
+  color: #1a1a1a;
+  cursor: default;
+  pointer-events: none;
+}
+.ch-desc {
+  color: #1c1010;
+  font-size: 11px;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: .02em;
+}
+
+/* metrics pill layout */
+.pill-group { margin-bottom: 24px; }
+.pill-group-label {
+  font-size: 9px;
+  letter-spacing: .14em;
+  color: var(--red-deep);
+  text-transform: uppercase;
+  margin-bottom: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #120606;
+}
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0;
+}
+.pill {
+  font-size: 10px;
+  font-family: inherit;
+  color: #2a1515;
+  background: #0a0303;
+  border: 1px solid #170808;
+  border-radius: 0;
+  padding: 4px 10px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.pill:hover { color: #553030; border-color: var(--red-deep); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hdr">
+  <div class="hdr-name">Karamjot Singh</div>
+  <div class="hdr-sub">
+    AI Research Scientist &nbsp;&middot;&nbsp;
+    Model Optimization &nbsp;&middot;&nbsp;
+    NUS Singapore &nbsp;&middot;&nbsp;
+    <a href="https://huggingface.co/karamjotsingh">HuggingFace / karamjotsingh</a>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="seg-label">Knowledge Base</div>
+  <div class="seg-scroll">
+    <div class="seg" id="seg"></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+</div>
+
+<script>
+const repos = [
+  {
+    id:'lm', label:'LANG MODELLING',
+    url:'https://karam-nus.github.io/language-modelling/',
+    count:'38 ch + 3 appendices',
+    base:'https://karam-nus.github.io/language-modelling/',
+    groups:[
+      {name:'Foundations',chs:[
+        {n:'01',t:'Introduction to Language Modelling',u:'01_introduction',d:'text \u2192 tokens \u2192 tensors \u2192 predictions'},
+        {n:'02',t:'Embeddings & Representations',u:'02_embeddings',d:'dense vectors, RoPE, ALiBi, geometry of meaning'},
+        {n:'03',t:'The Transformer',u:'03_the_transformer',d:'complete architecture walkthrough with tensor shapes'},
+        {n:'04',t:'Attention \u2014 SDPA & Multi-Head',u:'04_attention_sdpa_and_mha',d:'Q/K/V math, causal masking, Flash Attention'},
+      ]},
+      {name:'Attention & Architecture',chs:[
+        {n:'05',t:'Attention Variants \u2014 GQA, MQA & MLA',u:'05_attention_gqa_mqa_mla',d:'KV bottleneck, sliding window, tensor shape comparisons'},
+        {n:'06',t:'Decoder-Only Models',u:'06_decoder_only_models',d:'GPT family, LLaMA architecture, open-source landscape'},
+        {n:'07',t:'Encoder & Seq2Seq Models',u:'07_encoder_and_seq2seq_models',d:'BERT, T5, BART \u2014 encoder vs decoder vs encoder-decoder'},
+        {n:'08',t:'Multimodal Models',u:'08_multimodal_models',d:'ViT, Whisper, modality fusion, image-to-token pipelines'},
+      ]},
+      {name:'Training',chs:[
+        {n:'09',t:'Data for LLMs & VLMs',u:'09_data_for_llms',d:'pre-training, SFT, RLHF, RL data formats & tensor shapes'},
+        {n:'10',t:'Pre-Training at Scale',u:'10_pretraining_at_scale',d:'data curation, training objectives, loss curves'},
+        {n:'11',t:'Optimizers & Loss Functions',u:'11_optimizers_and_loss_functions',d:'AdamW, Adam-mini, Muon, SOAP, DPO loss'},
+        {n:'12',t:'Mid-Training & Continued Pre-Training',u:'12_mid_training',d:'long-context extension, domain adaptation, annealing'},
+        {n:'13',t:'Fine-Tuning & Adaptation',u:'13_finetuning_and_adaptation',d:'SFT, LoRA, QLoRA'},
+        {n:'14',t:'PEFT: LoRA, QLoRA & Variants',u:'14_peft_lora_and_variants',d:'rank decomposition math, DoRA, rsLoRA, VeRA'},
+        {n:'15',t:'Alignment \u2014 RLHF & Beyond',u:'15_alignment_rlhf_and_beyond',d:'reward models, PPO, DPO, Constitutional AI'},
+      ]},
+      {name:'Inference & Generation',chs:[
+        {n:'16',t:'Inference & Sampling Strategies',u:'16_inference_and_sampling',d:'temperature, top-k/p, speculative decoding, structured output'},
+        {n:'17',t:'KV-Cache \u2014 Mechanics & Memory',u:'17_kv_cache_mechanics',d:'tensor shapes through generation, memory calculations'},
+        {n:'18',t:'KV-Cache \u2014 Optimization Strategies',u:'18_kv_cache_optimization',d:'PagedAttention, continuous batching, KV quantization'},
+      ]},
+      {name:'Quantization',chs:[
+        {n:'19',t:'Data Types & Numerical Precision',u:'19_data_types_and_precision',d:'FP32\u2192FP4 bit layouts, BF16 vs FP16'},
+        {n:'20',t:'Quantization Fundamentals',u:'20_quantization_fundamentals',d:'affine math, calibration, weight-only vs W+A'},
+        {n:'21',t:'Quantization Techniques \u2014 Full Landscape',u:'21_quantization_techniques',d:'GPTQ, AWQ, SmoothQuant, KIVI, BitNet'},
+        {n:'22',t:'Quantization Benchmarks & Selection',u:'22_quantization_benchmarks',d:'perplexity vs bits, throughput benchmarks, GGUF guide'},
+        {n:'23',t:'Knowledge Distillation & QAD',u:'23_knowledge_distillation',d:'feature distillation, fake quantization with STE'},
+      ]},
+      {name:'Hardware & Kernels',chs:[
+        {n:'24',t:'GPU Architecture for ML',u:'24_gpu_architecture',d:'SMs, Tensor Cores, roofline model, A100/H100/B200'},
+        {n:'25',t:'CUDA & Kernel Development',u:'25_cuda_and_kernel_development',d:'Triton kernels, Flash Attention design, fused ops'},
+        {n:'26',t:'Distributed Training',u:'26_distributed_training',d:'DDP, FSDP, DeepSpeed ZeRO, 3D parallelism'},
+        {n:'27',t:'ASICs & Specialized Accelerators',u:'27_asics_and_accelerators',d:'TPUs, Groq, Trainium, Apple Silicon'},
+      ]},
+      {name:'Ecosystem & Tooling',chs:[
+        {n:'28',t:'The Hugging Face Ecosystem',u:'28_huggingface_ecosystem',d:'Hub, Spaces, datasets, tokenizers'},
+        {n:'29',t:'Transformers Library Deep Dive',u:'29_transformers_library',d:'AutoModel, Trainer, Pipeline internals'},
+        {n:'30',t:'Evaluation & Benchmarks',u:'30_evaluation_and_benchmarks',d:'MMLU, HumanEval, lm-eval-harness'},
+        {n:'31',t:'Serving & Deployment',u:'31_serving_and_deployment',d:'vLLM, TGI, TensorRT-LLM, Ollama'},
+      ]},
+      {name:'Advanced Topics',chs:[
+        {n:'32',t:'Scaling Laws & Emergent Abilities',u:'32_scaling_laws',d:'Kaplan, Chinchilla, emergence debate'},
+        {n:'33',t:'Mixture of Experts',u:'33_mixture_of_experts',d:'sparse routing, Mixtral, DeepSeek-MoE'},
+        {n:'34',t:'SSMs & Beyond Transformers',u:'34_ssms_and_alternatives',d:'Mamba, RWKV, Jamba'},
+        {n:'35',t:'Reasoning Models',u:'35_reasoning_models',d:'chain-of-thought, o1-style, test-time compute scaling'},
+        {n:'36',t:'Retrieval-Augmented Generation',u:'36_rag',d:'RAG pipeline, embedding models, vector databases'},
+        {n:'37',t:'Agents & Tool Use',u:'37_agents_and_tool_use',d:'function calling, coding agents, MCP protocol'},
+        {n:'38',t:'The Frontier',u:'38_frontier',d:'long context, world models, safety, interpretability'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'History of Language Modelling',u:'appendix_a_history',d:'Shannon \u2192 GPT-4 \u2014 every milestone and breakthrough'},
+        {n:'B',t:'Tokenization Deep Dive',u:'appendix_b_tokenization',d:'BPE, WordPiece, SentencePiece, training from scratch'},
+        {n:'C',t:'HuggingFace Config Reference',u:'appendix_c_model_config',d:'every config.json parameter explained'},
+      ]},
+    ]
+  },
+  {
+    id:'models', label:'MODELS',
+    url:'https://karam-nus.github.io/models/',
+    count:'7 architecture families',
+    base:'https://karam-nus.github.io/models/',
+    groups:[
+      {name:'Model Families',chs:[
+        {n:'01',t:'Qwen',u:'01_Qwen',d:'v1 \u2192 1.5 \u2192 2 \u2192 2.5 \u2192 3'},
+        {n:'02',t:'Llama',u:'02_Llama',d:'v1 \u2192 2 \u2192 3 \u2192 3.1 \u2192 3.2 \u2192 3.3 \u2192 4'},
+        {n:'03',t:'DeepSeek',u:null,d:'V1 \u2192 V2 \u2192 V3 \u2192 R1 \u00b7 planned'},
+        {n:'04',t:'Gemma',u:'04_Gemma',d:'v1 \u2192 2 \u2192 3 \u2192 4'},
+        {n:'05',t:'Mistral',u:null,d:'7B \u2192 Mixtral \u2192 Large \u00b7 planned'},
+        {n:'06',t:'Phi',u:null,d:'v1 \u2192 1.5 \u2192 2 \u2192 3 \u2192 4 \u00b7 planned'},
+        {n:'07',t:'Alpamayo',u:'07_Alpamayo',d:'R1 \u2192 1.5 (VLA)'},
+      ]},
+    ]
+  },
+  {
+    id:'inference', label:'INFERENCE',
+    url:'https://karam-nus.github.io/inference/',
+    count:'12 chapters',
+    base:'https://karam-nus.github.io/inference/',
+    groups:[
+      {name:'',chs:[
+        {n:'01',t:'Grand Overview',u:'01_grand_overview',d:'full stack: PyTorch model \u2192 hardware execution'},
+        {n:'02',t:'Glossary & Concept Map',u:'02_glossary_and_concept_map',d:'every term defined + visual relationship maps'},
+        {n:'03',t:'Inference Engines Deep Dive',u:'03_inference_engines',d:'vLLM, SGLang, llama.cpp, TensorRT-LLM \u2014 compared'},
+        {n:'04',t:'Runtimes & Backends',u:'04_runtimes_and_backends',d:'ONNX Runtime, CUDA, ROCm, OpenVINO, ExecuTorch'},
+        {n:'05',t:'Hardware Landscape',u:'05_hardware_landscape',d:'NVIDIA, AMD, Intel, TPUs, NPUs, custom ASICs'},
+        {n:'06',t:'Quantization to Deployment Bridge',u:'06_quantization_to_deployment',d:'how your quantized model gets deployed end-to-end'},
+        {n:'07',t:'Company Landscape',u:'07_company_landscape',d:'NVIDIA, Renesas, Synopsys, Qualcomm'},
+        {n:'08',t:'Model Formats & Serialization',u:'08_model_formats',d:'GGUF, ONNX, SafeTensors, TorchScript'},
+        {n:'09',t:'Serving Infrastructure & Middleware',u:'09_serving_and_middleware',d:'Triton, KServe, API gateways, load balancers'},
+        {n:'10',t:'Edge & Embedded Deployment',u:'10_edge_and_embedded',d:'TFLite, ExecuTorch, microcontrollers, Renesas MCUs'},
+        {n:'11',t:'Compiler Stack',u:'11_compiler_stack',d:'TVM, XLA, Triton compiler, MLIR'},
+        {n:'12',t:'Practical Code Guide',u:'12_practical_code_guide',d:'PyTorch \u2192 quantize \u2192 export \u2192 deploy \u2192 serve'},
+      ]},
+    ]
+  },
+  {
+    id:'agents', label:'AGENTS',
+    url:'https://karam-nus.github.io/agents/',
+    count:'14 chapters',
+    base:'https://karam-nus.github.io/agents/',
+    groups:[
+      {name:'Foundation',chs:[
+        {n:'01',t:'What Are Agents?',u:'01_what_are_agents',d:'definition, paradigm shift, when to use agents vs plain LLMs'},
+        {n:'02',t:'History & Evolution',u:'02_history_and_evolution',d:'ELIZA \u2192 expert systems \u2192 ReAct \u2192 autonomous agents'},
+        {n:'03',t:'Anatomy of an Agent',u:'03_anatomy_of_an_agent',d:'the 4 pillars: LLM brain, tools, memory, planning'},
+        {n:'04',t:'The Agent Loop',u:'04_the_agent_loop',d:'observe \u2192 think \u2192 act cycle, autonomous execution'},
+      ]},
+      {name:'Core Capabilities',chs:[
+        {n:'05',t:'Tools & Function Calling',u:'05_tools_and_function_calling',d:'function calling APIs, MCP protocol, custom tools'},
+        {n:'06',t:'Memory Systems',u:'06_memory_systems',d:'working memory, short/long-term, vector stores, RAG'},
+        {n:'07',t:'Planning & Reasoning',u:'07_planning_and_reasoning',d:'CoT, ReAct, Reflexion, task decomposition, self-correction'},
+      ]},
+      {name:'Scaling Up',chs:[
+        {n:'08',t:'Multi-Agent Systems',u:'08_multi_agent_systems',d:'communication patterns, supervisor & swarm architectures'},
+        {n:'09',t:'Agentic Frameworks & SDKs',u:'09_agentic_frameworks',d:'LangGraph, CrewAI, AutoGen, OpenAI Agents SDK'},
+      ]},
+      {name:'Hands-On & Production',chs:[
+        {n:'10',t:'Build Your First Agent',u:'10_build_your_first_agent',d:'research assistant with OpenAI SDK + LangGraph'},
+        {n:'11',t:'Agentic Design Patterns',u:'11_agentic_design_patterns',d:'router, orchestrator-worker, evaluator-optimizer, HITL'},
+        {n:'12',t:'Deployment & Production',u:'12_deployment_and_production',d:'observability, cost management, safety guardrails'},
+        {n:'13',t:'Open Source Landscape',u:'13_open_source_landscape',d:'30+ curated projects: frameworks, apps, benchmarks, infra'},
+        {n:'14',t:'Career Guide',u:'14_career_guide',d:'skills roadmap, portfolio projects, interview topics'},
+      ]},
+    ]
+  },
+  {
+    id:'nvidia', label:'NVIDIA',
+    url:'https://karam-nus.github.io/nvidia/',
+    count:'13 ch + 2 appendices',
+    base:'https://karam-nus.github.io/nvidia/',
+    groups:[
+      {name:'Foundations',chs:[
+        {n:'01',t:'GPU Fundamentals',u:'01_gpu_fundamentals',d:'CPU vs GPU, data types, memory hierarchy, roofline model'},
+        {n:'02',t:'GPU Microarchitecture',u:'02_gpu_microarchitecture',d:'Streaming Multiprocessors, Tensor Cores, warp execution'},
+        {n:'03',t:'CUDA Programming',u:'03_cuda_programming',d:'kernels, memory management, streams, Python bindings'},
+      ]},
+      {name:'Software Stack',chs:[
+        {n:'04',t:'NVIDIA Libraries',u:'04_nvidia_libraries',d:'cuBLAS, cuDNN, NCCL, CUTLASS, cuSPARSE'},
+        {n:'05',t:'Optimization Stack',u:'05_optimization_stack',d:'TensorRT, TensorRT-LLM, ModelOpt, Triton Inference Server'},
+        {n:'06',t:'NVIDIA Models',u:'06_nvidia_models',d:'Nemotron, Alpamayo, NeMo, ASR/TTS, NIM microservices'},
+      ]},
+      {name:'Scaling',chs:[
+        {n:'07',t:'Parallelism on GPUs',u:'07_parallelism',d:'data, tensor, pipeline, expert parallelism, ZeRO'},
+        {n:'08',t:'GPU Generations',u:'08_gpu_generations',d:'GeForce 30\u219250, H100, H200, B200 \u2014 features & VRAM'},
+        {n:'09',t:'NVIDIA CPUs',u:'09_nvidia_cpus',d:'Grace CPU, Grace Hopper Superchip, ARM in data center'},
+      ]},
+      {name:'Infrastructure & Economics',chs:[
+        {n:'10',t:'Multi-GPU Interconnects',u:'10_multi_gpu_interconnects',d:'NVLink, NVSwitch, PCIe, InfiniBand'},
+        {n:'11',t:'Data Center Architectures',u:'11_data_center_architectures',d:'DGX, HGX, SuperPOD, DGX Cloud, full rack design'},
+        {n:'12',t:'GPU Economics & Tokenomics',u:'12_gpu_economics',d:'cost per token, TCO analysis, cloud vs on-prem'},
+        {n:'13',t:'ASICs & GPU Competitors',u:'13_asics_and_competitors',d:'Cerebras, Groq, Google TPU, Intel Gaudi'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'Company History & Timeline',u:'appendix_a_company_history',d:"from a Denny\u2019s booth (1993) to $3T market cap"},
+        {n:'B',t:'Future Roadmap',u:'appendix_b_future_roadmap',d:'Rubin, Vera, photonic interconnects, quantum'},
+      ]},
+    ]
+  },
+  {
+    id:'vision', label:'VISION',
+    url:'https://karam-nus.github.io/vision/',
+    count:'42 ch + 3 appendices',
+    base:'https://karam-nus.github.io/vision/',
+    groups:[
+      {name:'Overview & Foundations',chs:[
+        {n:'00',t:'Grand Overview',u:'00_grand_overview',d:'full CV landscape \u2014 tasks, history, benchmarks'},
+        {n:'01',t:'Image Fundamentals',u:'01_image_fundamentals',d:'images as tensors [B,C,H,W], color spaces, preprocessing'},
+      ]},
+      {name:'Use Cases',chs:[
+        {n:'02',t:'Image Classification',u:'02_image_classification',d:'softmax, zero-shot, ImageNet'},
+        {n:'03',t:'Object Detection',u:'03_object_detection',d:'two-stage vs one-stage, NMS deep dive, mAP'},
+        {n:'04',t:'Semantic Segmentation',u:'04_semantic_segmentation',d:'encoder-decoder, dilated convolutions, mIoU'},
+        {n:'05',t:'Instance Segmentation',u:'05_instance_segmentation',d:'Mask R-CNN, SAM, query-based methods'},
+        {n:'06',t:'Object Tracking',u:'06_object_tracking',d:'Kalman filter, Hungarian algorithm, SORT \u2192 ByteTrack'},
+        {n:'07',t:'Pose Estimation',u:'07_pose_estimation',d:'keypoints, heatmaps, PAF, top-down vs bottom-up'},
+        {n:'08',t:'Face Recognition',u:'08_face_recognition',d:'detection, alignment, ArcFace/CosFace/SphereFace'},
+        {n:'09',t:'Depth Estimation',u:'09_depth_estimation',d:'stereo, monocular depth, LiDAR fusion'},
+        {n:'10',t:'Optical Flow',u:'10_optical_flow',d:'Lucas-Kanade, FlowNet, RAFT'},
+        {n:'11',t:'Video Understanding',u:'11_video_understanding',d:'action recognition, 3D conv, temporal transformers'},
+        {n:'12',t:'3D Vision',u:'12_3d_vision',d:'point clouds, NeRF, 3D Gaussian splatting, SLAM'},
+        {n:'13',t:'Anomaly Detection',u:'13_anomaly_detection',d:'one-class learning, PatchCore, reconstruction-based'},
+        {n:'14',t:'OCR & Document Understanding',u:'14_ocr_and_document_understanding',d:'CRNN+CTC, end-to-end OCR, LayoutLM'},
+        {n:'15',t:'Medical Imaging',u:'15_medical_imaging',d:'segmentation, classification, domain challenges, MedSAM'},
+        {n:'16',t:'Multimodal Vision Tasks',u:'16_multimodal_vision_tasks',d:'VQA, captioning, visual grounding, text-to-image'},
+      ]},
+      {name:'Architectures',chs:[
+        {n:'17',t:'CNN Fundamentals',u:'17_cnn_fundamentals',d:'convolution math, receptive fields, depthwise convs'},
+        {n:'18',t:'Classification Architectures',u:'18_classification_architectures',d:'ResNet, MobileNet, EfficientNet, ViT, Swin, ConvNeXt'},
+        {n:'19',t:'Detection Architectures',u:'19_detection_architectures',d:'YOLO v1\u2192v11, Faster R-CNN, DETR, RT-DETR'},
+        {n:'20',t:'Segmentation Architectures',u:'20_segmentation_architectures',d:'FCN, U-Net, DeepLab v3+, Mask2Former, SAM'},
+        {n:'21',t:'Pose Architectures',u:'21_pose_architectures',d:'HRNet, ViTPose, OpenPose, WholeBody'},
+        {n:'22',t:'Face Architectures',u:'22_face_architectures',d:'MTCNN, RetinaFace, MobileFaceNet, ArcFace'},
+        {n:'23',t:'Tracking Architectures',u:'23_tracking_architectures',d:'SORT, DeepSORT, ByteTrack, StrongSORT'},
+        {n:'24',t:'Vision Transformers',u:'24_vision_transformers',d:'ViT, DeiT, Swin, MAE, DINO, DINOv2'},
+        {n:'25',t:'Multimodal Architectures',u:'25_multimodal_architectures',d:'CLIP, BLIP-2, LLaVA, Grounding DINO, SAM 2'},
+      ]},
+      {name:'Optimization',chs:[
+        {n:'26',t:'Optimization Overview',u:'26_optimization_overview',d:'accuracy-speed-size triangle, profiling taxonomy'},
+        {n:'27',t:'Quantization',u:'27_quantization',d:'PTQ, QAT, INT8/FP8, mixed precision'},
+        {n:'28',t:'Pruning & Sparsification',u:'28_pruning_and_sparsification',d:'structured/unstructured, lottery ticket, ASP'},
+        {n:'29',t:'Knowledge Distillation',u:'29_knowledge_distillation',d:'feature mimicking, attention transfer'},
+        {n:'30',t:'Neural Architecture Search',u:'30_neural_architecture_search',d:'DARTS, Once-for-All, EfficientNet'},
+        {n:'31',t:'Efficient Inference',u:'31_efficient_inference',d:'ONNX, TensorRT, OpenVINO, TFLite, CoreML'},
+      ]},
+      {name:'Data & Training',chs:[
+        {n:'32',t:'Datasets',u:'32_datasets',d:'ImageNet, COCO, ADE20K, LFW, Kinetics, KITTI, MVTec'},
+        {n:'33',t:'Data Augmentation',u:'33_data_augmentation',d:'MixUp, CutMix, Mosaic, AutoAugment, Copy-Paste'},
+        {n:'34',t:'Training Recipes',u:'34_training_recipes',d:'loss functions, AdamW, LR schedules, EMA'},
+        {n:'35',t:'Self-Supervised Learning',u:'35_self_supervised_learning',d:'SimCLR, MoCo, BYOL, MAE, DINO'},
+      ]},
+      {name:'Deployment & Ecosystem',chs:[
+        {n:'36',t:'Deployment',u:'36_deployment',d:'ONNX export, Triton/TorchServe, edge (Jetson/mobile)'},
+        {n:'37',t:'Ecosystem & Libraries',u:'37_ecosystem_and_libraries',d:'timm, MMDetection, Detectron2, Ultralytics, Roboflow'},
+        {n:'38',t:'Evaluation & Benchmarks',u:'38_evaluation_and_benchmarks',d:'mAP computation, OKS, HOTA, FID, Rank-1'},
+      ]},
+      {name:'Frontier',chs:[
+        {n:'39',t:'Vision\u2013Language Models',u:'39_vision_language_models',d:'CLIP ecosystem, GPT-4V, Gemini Vision'},
+        {n:'40',t:'Foundation Models',u:'40_foundation_models',d:'SAM, DINOv2, Florence-2, InternVL'},
+        {n:'41',t:'Generative Vision',u:'41_generative_vision',d:'GANs, VAEs, DDPM, Stable Diffusion, ControlNet'},
+        {n:'42',t:'The Frontier',u:'42_frontier',d:'world models, 3DGS, embodied AI, neuromorphic vision'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'History of Computer Vision',u:'appendix_a_history',d:'Hubel & Wiesel \u2192 SAM 2'},
+        {n:'B',t:'Math Foundations',u:'appendix_b_math_foundations',d:'linear algebra, convolutions, Fourier, probability'},
+        {n:'C',t:'Glossary',u:'appendix_c_glossary',d:'every key term, acronym, and metric defined'},
+      ]},
+    ]
+  },
+  {
+    id:'evals', label:'EVALS',
+    url:'https://karam-nus.github.io/evals/',
+    count:'4 benchmarks',
+    base:'https://karam-nus.github.io/evals/',
+    groups:[
+      {name:'',chs:[
+        {n:'01',t:'Wikitext Perplexity',u:'01_wikitext_perplexity',d:'language modelling quality, training progress, regression detection'},
+        {n:'02',t:'MMLU',u:'02_mmlu',d:'broad academic knowledge across 57 subjects'},
+        {n:'03',t:'MMMU',u:'03_mmmu',d:'college-level multimodal understanding across 30 subjects'},
+        {n:'04',t:'RealWorldQA',u:'04_realworldqa',d:'real-world spatial and visual understanding from photos'},
+      ]},
+    ]
+  },
+  {
+    id:'metrics', label:'METRICS',
+    url:'https://karam-nus.github.io/metrics/',
+    count:'58 metrics \u00b7 8 domains',
+    base:'https://karam-nus.github.io/metrics/',
+    pillGroups:[
+      {name:'Tensor Comparison & Numerical Debugging',pills:['Cosine Similarity','RMSE','RRMSE','MAE','torch.allclose','SNR','SQNR','KL Divergence','L1/L2 Norm Diff','Max Absolute Error','Pearson/Spearman']},
+      {name:'General Regression',pills:['MSE','RMSE','MAE','MAPE','R\u00b2','Huber Loss','SMAPE']},
+      {name:'Classification',pills:['Accuracy','Precision','Recall','F1','ROC-AUC','PR-AUC','MCC','Cohen\u2019s Kappa','Specificity','Top-K Accuracy']},
+      {name:'Object Detection',pills:['mAP','Average Recall','IoU','GIoU','DIoU','CIoU']},
+      {name:'Segmentation',pills:['Dice','IoU (Jaccard)','Pixel Accuracy','Boundary F1']},
+      {name:'Generative & Distribution Quality',pills:['FID','Inception Score','LPIPS','SSIM','PSNR','BLEU','ROUGE','METEOR','CIDEr','BERTScore']},
+      {name:'Ranking & Retrieval',pills:['NDCG','MRR','Precision@K','Recall@K','MAP@K']},
+      {name:'Calibration & Uncertainty',pills:['ECE','MCE','Brier Score','NLL','Reliability Diagrams']},
+    ]
+  },
+  {
+    id:'software', label:'SOFTWARE',
+    url:'https://karam-nus.github.io/software/',
+    count:'20 ch + 3 appendices',
+    base:'https://karam-nus.github.io/software/',
+    groups:[
+      {name:'Foundations',chs:[
+        {n:'01',t:'Software Development Lifecycle',u:'01_software_development_lifecycle',d:'Agile & Scrum for ML teams, sprint planning'},
+        {n:'02',t:'Version Control with Git',u:'02_version_control_with_git',d:'branching strategies, conventional commits, monorepos'},
+        {n:'03',t:'Code Quality & Style',u:'03_code_quality_and_style',d:'Ruff, Black, mypy, PEP 8, pre-commit hooks'},
+        {n:'04',t:'Testing for ML Software',u:'04_testing_for_ml_software',d:'pytest, property-based testing, ML-specific patterns'},
+        {n:'05',t:'Design Patterns',u:'05_design_patterns',d:'Strategy, Factory, Observer, Registry, Pipeline for ML'},
+      ]},
+      {name:'Architecture & Design',chs:[
+        {n:'06',t:'OOP & Functional Design',u:'06_oop_and_functional_design',d:'SOLID, composition vs inheritance, Pydantic'},
+        {n:'07',t:'API Design & REST',u:'07_api_design_and_rest',d:'FastAPI for model serving, gRPC, versioning'},
+        {n:'08',t:'Documentation',u:'08_documentation',d:'Sphinx/MkDocs, docstrings, ADRs, README-driven dev'},
+        {n:'09',t:'Dependency & Package Management',u:'09_dependency_and_package_management',d:'pip, conda, uv, lock files'},
+        {n:'10',t:'Build Systems & Automation',u:'10_build_systems_and_automation',d:'Makefiles, CI/CD with GitHub Actions'},
+      ]},
+      {name:'Infrastructure & Operations',chs:[
+        {n:'11',t:'Containerization & Reproducibility',u:'11_containerization_and_reproducibility',d:'Docker, multi-stage builds, NVIDIA container toolkit'},
+        {n:'12',t:'Configuration Management',u:'12_configuration_management',d:'Hydra, OmegaConf, feature flags, 12-factor app'},
+        {n:'13',t:'Logging, Monitoring & Observability',u:'13_logging_monitoring_and_observability',d:'structured logging, W&B, MLflow'},
+        {n:'14',t:'Error Handling & Debugging',u:'14_error_handling_and_debugging',d:'pdb/ipdb, profiling, debugging distributed systems'},
+        {n:'15',t:'Code Review & Collaboration',u:'15_code_review_and_collaboration',d:'PR best practices, trunk-based development, RFC process'},
+      ]},
+      {name:'Systems & Performance',chs:[
+        {n:'16',t:'Software Architecture',u:'16_software_architecture',d:'monolith vs microservices, event-driven, ML pipeline architectures'},
+        {n:'17',t:'Performance & Profiling',u:'17_performance_and_profiling',d:'cProfile, line_profiler, memory management, concurrency'},
+        {n:'18',t:'Security Best Practices',u:'18_security_best_practices',d:'secrets management, OWASP basics, secure ML pipelines'},
+        {n:'19',t:'Data Engineering Basics',u:'19_data_engineering_basics',d:'ETL/ELT, data validation, DVC, storage patterns'},
+        {n:'20',t:'ML System Design',u:'20_ml_system_design',d:'model registry, feature stores, A/B testing, MLOps'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'Package Management Deep Dive',u:'appendix_a_package_management',d:'conda vs uv vs pip \u2014 complete workflows'},
+        {n:'B',t:'Unix & Shell Essentials',u:'appendix_b_unix_and_shell',d:'shell scripting, SSH, tmux, cron, dotfiles'},
+        {n:'C',t:'VSCode Advanced Setup',u:'appendix_c_vscode_setup',d:'extensions, debugging configs, remote dev, Copilot'},
+      ]},
+    ]
+  },
+];
+
+/* ── build tab strip ── */
+const seg = document.getElementById('seg');
+repos.forEach((r,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'seg-item' + (i===0?' active':'');
+  btn.textContent = r.label;
+  btn.dataset.id = r.id;
+  btn.addEventListener('click', () => activate(r.id));
+  seg.appendChild(btn);
+});
+const track = document.createElement('div');
+track.className = 'seg-track';
+seg.appendChild(track);
+
+/* ── build content panels ── */
+const contentEl = document.getElementById('content');
+repos.forEach((r,i) => {
+  const div = document.createElement('div');
+  div.className = 'content' + (i===0?' active':'');
+  div.id = 'panel-'+r.id;
+
+  // meta bar
+  const meta = document.createElement('div');
+  meta.className = 'repo-meta';
+  const a = document.createElement('a');
+  a.className = 'repo-link';
+  a.href = r.url; a.target='_blank'; a.rel='noopener';
+  a.textContent = r.label + ' \u2197';
+  const cnt = document.createElement('span');
+  cnt.className = 'repo-count';
+  cnt.textContent = r.count;
+  meta.appendChild(a); meta.appendChild(cnt);
+  div.appendChild(meta);
+
+  if (r.pillGroups) {
+    r.pillGroups.forEach(g => {
+      const pg = document.createElement('div');
+      pg.className = 'pill-group';
+      const lbl = document.createElement('div');
+      lbl.className = 'pill-group-label';
+      lbl.textContent = g.name;
+      pg.appendChild(lbl);
+      const pills = document.createElement('div');
+      pills.className = 'pills';
+      g.pills.forEach(p => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.textContent = p;
+        pills.appendChild(pill);
+      });
+      pg.appendChild(pills);
+      div.appendChild(pg);
+    });
+  } else {
+    r.groups.forEach(g => {
+      const grpDiv = document.createElement('div');
+      grpDiv.className = 'group';
+      if (g.name) {
+        const lbl = document.createElement('div');
+        lbl.className = 'group-label';
+        lbl.textContent = g.name;
+        grpDiv.appendChild(lbl);
+      }
+      g.chs.forEach(ch => {
+        const row = document.createElement('div');
+        row.className = 'ch';
+        const num = document.createElement('span');
+        num.className = 'ch-num';
+        num.textContent = ch.n;
+        row.appendChild(num);
+        if (ch.u) {
+          const lnk = document.createElement('a');
+          lnk.className = 'ch-link';
+          lnk.href = r.base + ch.u;
+          lnk.target = '_blank'; lnk.rel = 'noopener';
+          lnk.textContent = ch.t;
+          row.appendChild(lnk);
+        } else {
+          const span = document.createElement('span');
+          span.className = 'ch-link planned';
+          span.textContent = ch.t;
+          row.appendChild(span);
+        }
+        if (ch.d) {
+          const desc = document.createElement('span');
+          desc.className = 'ch-desc';
+          desc.textContent = '\u00b7 ' + ch.d;
+          row.appendChild(desc);
+        }
+        grpDiv.appendChild(row);
+      });
+      div.appendChild(grpDiv);
+    });
+  }
+  contentEl.appendChild(div);
+});
+
+/* ── tab switching ── */
+function moveTrack() {
+  const active = seg.querySelector('.seg-item.active');
+  if (!active) return;
+  track.style.left  = active.offsetLeft + 'px';
+  track.style.width = active.offsetWidth + 'px';
+}
+function activate(id) {
+  seg.querySelectorAll('.seg-item').forEach(b =>
+    b.classList.toggle('active', b.dataset.id === id)
+  );
+  document.querySelectorAll('.content').forEach(c =>
+    c.classList.toggle('active', c.id === 'panel-'+id)
+  );
+  moveTrack();
+  seg.querySelector('.seg-item.active')
+     ?.scrollIntoView({block:'nearest', inline:'nearest'});
+}
+window.addEventListener('load',   () => setTimeout(moveTrack, 40));
+window.addEventListener('resize', moveTrack);
+</script>
+</body>
+</html>
