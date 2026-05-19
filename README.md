@@ -8,7 +8,7 @@
 
 ---
 
-AI Research Scientist · Model Optimization · **NUS Singapore** · [🤗 karamjotsingh](https://huggingface.co/karamjotsingh)
+AI Research Scientist · Model Optimization · **NUS Singapore** · [HuggingFace → karamjotsingh](https://huggingface.co/karamjotsingh)
 
 <div align="center">
 
