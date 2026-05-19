@@ -10,6 +10,12 @@
 
 AI Research Scientist · Model Optimization · **NUS Singapore** · [🤗 karamjotsingh](https://huggingface.co/karamjotsingh)
 
+<div align="center">
+
+[![Interactive Knowledge Base](https://img.shields.io/badge/Interactive_Knowledge_Base-Open-ffffff?style=for-the-badge&labelColor=111111&color=222222)](https://karam-nus.github.io/karam-nus/)
+
+</div>
+
 ---
 
 ## Knowledge Base
