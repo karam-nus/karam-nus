@@ -51,7 +51,7 @@ body::before {
 /* ── header ── */
 .hdr { text-align: center; margin-bottom: 56px; }
 .hdr-name {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--white);
   letter-spacing: .12em;
@@ -59,10 +59,11 @@ body::before {
   margin-bottom: 12px;
 }
 .hdr-sub {
-  font-size: 10px;
+  font-size: 13px;
   color: #888;
-  letter-spacing: .16em;
+  letter-spacing: .12em;
   text-transform: uppercase;
+  line-height: 1.8;
 }
 .hdr-sub a {
   color: #888;
@@ -81,7 +82,7 @@ body::before {
 
 /* ── seg label ── */
 .seg-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .18em;
   color: #999;
   text-transform: uppercase;
@@ -108,7 +109,7 @@ body::before {
 
 .seg-item {
   color: #888;
-  font-size: 11px;
+  font-size: 13px;
   font-family: inherit;
   font-weight: 400;
   padding: 6px 0;
@@ -164,7 +165,7 @@ body::before {
   border-bottom: 1px solid #555;
 }
 .repo-link {
-  font-size: 10px;
+  font-size: 12px;
   font-family: inherit;
   color: #888;
   text-decoration: none;
@@ -174,7 +175,7 @@ body::before {
 }
 .repo-link:hover { color: var(--red); }
 .repo-count {
-  font-size: 10px;
+  font-size: 12px;
   color: #777;
   letter-spacing: .08em;
 }
@@ -182,7 +183,7 @@ body::before {
 /* chapter groups */
 .group { margin-bottom: 32px; }
 .group-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .14em;
   color: #dd6666;
   text-transform: uppercase;
@@ -204,16 +205,16 @@ body::before {
 .ch:hover { border-color: #666; }
 
 .ch-num {
-  font-size: 10px;
+  font-size: 12px;
   color: #888;
   font-variant-numeric: tabular-nums;
-  min-width: 20px;
+  min-width: 24px;
   flex-shrink: 0;
   letter-spacing: .04em;
 }
 .ch-link {
   color: #bbb;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   text-decoration: none;
   transition: color .15s;
@@ -228,7 +229,7 @@ body::before {
 }
 .ch-desc {
   color: #999;
-  font-size: 11px;
+  font-size: 13px;
   flex: 1;
   min-width: 0;
   letter-spacing: .02em;
@@ -237,7 +238,7 @@ body::before {
 /* metrics pill layout */
 .pill-group { margin-bottom: 24px; }
 .pill-group-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .14em;
   color: #dd6666;
   text-transform: uppercase;
@@ -252,7 +253,7 @@ body::before {
   padding: 12px 0;
 }
 .pill {
-  font-size: 10px;
+  font-size: 12px;
   font-family: inherit;
   color: #cc9999;
   background: #3a2222;
@@ -264,6 +265,34 @@ body::before {
   transition: color .15s, border-color .15s;
 }
 .pill:hover { color: var(--red); border-color: var(--red); }
+
+/* ── mobile responsive ── */
+@media (max-width: 640px) {
+  body { padding: 28px 14px 60px; }
+  .panel { padding: 20px 16px; }
+  .hdr { margin-bottom: 32px; }
+  .hdr-name { font-size: 20px; letter-spacing: .08em; }
+  .hdr-sub {
+    font-size: 11px;
+    letter-spacing: .08em;
+    line-height: 2;
+  }
+  .seg { gap: 20px; }
+  .seg-item { font-size: 11px; }
+  .ch {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: flex-start;
+  }
+  .ch-desc {
+    flex-basis: 100%;
+    padding-left: 32px;
+    font-size: 12px;
+  }
+  .ch-link { font-size: 13px; }
+  .ch-num { min-width: 24px; }
+  .repo-meta { flex-wrap: wrap; gap: 8px; }
+}
 </style>
 </head>
 <body>
