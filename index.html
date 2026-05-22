@@ -318,21 +318,42 @@ html[data-theme="light"] #bg-canvas { opacity: 0; }
   position: fixed;
   top: 16px;
   right: 20px;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 11px;
-  letter-spacing: .14em;
-  padding: 5px 10px;
-  cursor: pointer;
   z-index: 10000;
-  text-transform: uppercase;
-  transition: color .2s, border-color .2s;
+  cursor: pointer;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
 }
-#theme-toggle:hover {
-  color: var(--red);
-  border-color: var(--red);
+#theme-toggle input {
+  display: none;
+}
+.toggle-knob {
+  display: block;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--border-mid);
+  position: relative;
+  transition: background .3s;
+}
+.toggle-knob::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: transform .3s, background .3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+#theme-toggle input:checked ~ .toggle-knob {
+  background: var(--red-dim);
+}
+#theme-toggle input:checked ~ .toggle-knob::after {
+  transform: translateX(18px);
+  background: var(--accent);
 }
 
 /* ── mobile responsive ── */
@@ -366,7 +387,10 @@ html[data-theme="light"] #bg-canvas { opacity: 0; }
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
-<button id="theme-toggle">light</button>
+<label id="theme-toggle" title="Toggle light/dark theme">
+  <input type="checkbox" id="theme-toggle-input">
+  <span class="toggle-knob"></span>
+</label>
 <div class="wrap">
 
 <header class="hdr">
@@ -823,20 +847,20 @@ window.addEventListener('resize', moveTrack);
 
 /* ── theme toggle ── */
 (function () {
-  const btn  = document.getElementById('theme-toggle');
-  const html = document.documentElement;
+  const input = document.getElementById('theme-toggle-input');
+  const html  = document.documentElement;
   function applyTheme(theme) {
     if (theme === 'light') {
       html.dataset.theme = 'light';
-      btn.textContent = 'dark';
+      input.checked = true;
     } else {
       delete html.dataset.theme;
-      btn.textContent = 'light';
+      input.checked = false;
     }
   }
   applyTheme(localStorage.getItem('theme') || 'dark');
-  btn.addEventListener('click', function () {
-    const next = html.dataset.theme === 'light' ? 'dark' : 'light';
+  input.addEventListener('change', function () {
+    const next = this.checked ? 'light' : 'dark';
     localStorage.setItem('theme', next);
     applyTheme(next);
   });
@@ -852,7 +876,13 @@ window.addEventListener('resize', moveTrack);
   var W = window.innerWidth, H = window.innerHeight;
   var scene    = new THREE.Scene();
   var camera   = new THREE.PerspectiveCamera(75, W / H, 0.1, 2000);
-  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  } catch (e) {
+    return; /* WebGL unavailable */
+  }
+  renderer.setClearColor(0x000000, 0); /* transparent background */
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
