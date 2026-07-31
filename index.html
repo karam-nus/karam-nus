@@ -4,433 +4,759 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karamjot Singh</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+<meta name="description" content="Chaptered technical guides on language modelling, vision, inference, agents, GPUs and the software around them.">
 
+<!-- Theme is applied before first paint to avoid a flash of the wrong background. -->
+<script>
+  try {
+    var t = localStorage.getItem('theme');
+    if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+  } catch (e) { /* localStorage unavailable (private mode) — default to light */ }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap">
+
+<style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 :root {
-  /* ── red accent (both themes) ── */
-  --red:      #cc2222;
-  --red-dim:  #7a0f0f;
-  --red-deep: #1e0808;
-  --red-faint:#110505;
-  --track-glow: 0 0 8px rgba(180,20,20,.7), 0 0 22px rgba(130,0,0,.35);
+  /* ── type ──
+     --font-script drives the hero line and nothing else. One-line swap.
+     Alternates (change the Google Fonts request in the page head to match):
+       'Great Vibes'  — formal calligraphy, more dramatic; needs ~1.25x the
+                        font-size to match Dancing Script's optical weight.
+       'Caveat'       — looser, more handwritten, reads younger.
+     Always keep `cursive` as the terminal fallback. */
+  --font-script: 'Dancing Script', cursive;
+  --font-sans:   'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:   'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
-  /* ── dark theme (default) ── */
-  --bg:            #0a0a10;
-  --bg-panel:      #14141c;
-  --text-primary:  #e0e0e0;
-  --text-heading:  #e8e8e8;
-  --text-link:     #bbbbbb;
-  --text-secondary:#888888;
-  --text-dim:      #999999;
-  --text-muted:    #777777;
-  --text-faint:    #666666;
-  --border:        #2a2a3a;
-  --border-mid:    #333345;
-  --border-hover:  #484860;
-  --accent:        #dd6666;
-  --pill-bg:       #3a2222;
-  --pill-text:     #cc9999;
-  --pill-border:   #666666;
-  --scanline:      rgba(0,0,0,.08);
+  /* ── light theme (default) ── */
+  --bg:        #FAF8F5;
+  --surface:   #FAF8F5;
+  --text:      #0E0E0E;
+  --text-2:    #5A564F;
+  --text-3:    #605C55;  /* AA 4.63:1 against the darkest panel surface */
+  --rule:      #DCD6CC;
+  --focus:     #0E0E0E;
+  --bar-bg:    rgba(250,248,245,.8);
+
+  /* ── card palette (identical in both themes, by design) ── */
+  --c-mint:#C3E8C9;        --t-mint:#0F1A11;
+  --c-sky:#B8E4F0;         --t-sky:#0C1A1F;
+  --c-ink:#0E0E0E;         --t-ink:#F5F5F5;
+  --c-peach:#F6CFB2;       --t-peach:#20140A;
+  --c-salmon:#F3BCAF;      --t-salmon:#21100C;
+  --c-sand:#EDD9AE;        --t-sand:#1E1808;
+  --c-pink:#F6BFE9;        --t-pink:#20101C;
+  --c-periwinkle:#C9C6F9;  --t-periwinkle:#12102A;
+
+  --ink-border: transparent;
+
+  /* How much of a card's colour is mixed into its expanded panel. Light and
+     dark need different amounts: mixing a pastel into a pale page darkens it,
+     but mixing the same pastel into a near-black page lightens it. */
+  --panel-mix: 34%;
+  /* The ink card is too dark to tint a panel with, so its panel uses this
+     neutral instead. */
+  --c-ink-panel: #9B9B97;
+
+  /* ── work-in-progress card surface ── */
+  --wip-surface: #E9E9E7;
+  --wip-text:    #33332F;
+
+  /* dotted paper grid */
+  --dot:    #CBC3B4;
+  --dot-hi: #948A79;
+
+  --ease: cubic-bezier(.4,0,.2,1);
 }
 
-html[data-theme="light"] {
-  --bg:            #f5f0e8;
-  --bg-panel:      #ede8de;
-  --text-primary:  #2c2520;
-  --text-heading:  #1e1610;
-  --text-link:     #4a3f35;
-  --text-secondary:#7a6e62;
-  --text-dim:      #8a7e72;
-  --text-muted:    #9a8e82;
-  --text-faint:    #b0a49a;
-  --border:        #c8bfb5;
-  --border-mid:    #bab0a6;
-  --border-hover:  #a09690;
-  --accent:        #b83030;
-  --pill-bg:       #edd8cc;
-  --pill-text:     #8b3c3c;
-  --pill-border:   #c0a898;
-  --scanline:      rgba(0,0,0,.03);
+html[data-theme="dark"] {
+  --bg:      #0C0C0E;
+  --surface: #0C0C0E;
+  --text:    #EDEDED;
+  --text-2:  #A8A29A;
+  --text-3:  #A5A098;    /* AA 4.63:1 against the darkest panel surface */
+  --rule:    #2A2A2E;
+  --focus:   #F5F5F5;
+  --bar-bg:  rgba(12,12,14,.8);
+
+  /* Only the ink card inverts — a near-black block on a near-black page
+     would otherwise vanish. Everything else stays fully saturated. */
+  --c-ink: #1A1A1E;
+  --ink-border: #333333;
+  --panel-mix: 20%;
+  --c-ink-panel: #4A4A50;
+
+  /* the gradient banner is bright in both themes, so the cards on it stay light */
+  --wip-surface: #E9E9E7;
+  --wip-text:    #33332F;
+
+  --dot:    #2E2E38;
+  --dot-hi: #55555F;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   background: var(--bg);
-  color: var(--text-primary);
-  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   min-height: 100vh;
-  padding: 56px 28px 100px;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── scanline texture overlay ── */
-body::before {
+/* ══════════════════════════════════════ dotted paper grid ═══════════
+   A single fixed layer behind the page. Cards, expansion panels and the
+   WIP banner all paint opaque backgrounds, so the dots stop at their
+   edges without needing to be masked out.
+
+   Three effects:
+     · drift     — the whole grid creeps diagonally, always
+     · parallax  — it also slides against the page as you scroll
+     · spotlight — dots within ~240px of the pointer sharpen
+   Drift and parallax share one background-position, written once per frame
+   from a single rAF loop (see the DOTTED GRID script). Keeping the layer
+   untransformed means the spotlight mask stays in exact viewport
+   coordinates, so the highlight tracks the cursor precisely.
+   All three are inert under prefers-reduced-motion; the spotlight is also
+   skipped on touch, where there is no cursor to follow. */
+.dots {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  --bx: 0px;
+  --by: 0px;
+  --mx: 50%;
+  --my: 40%;
+  --spot: 0;
+  background-image: radial-gradient(circle at center, var(--dot) 1.9px, transparent 2px);
+  background-size: 26px 26px;
+  background-position: var(--bx) var(--by);
+}
+/* the sharper grid, revealed only around the pointer */
+.dots::after {
   content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    var(--scanline) 2px,
-    var(--scanline) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.wrap { max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
-
-/* ── header ── */
-.hdr { text-align: center; margin-bottom: 56px; }
-.hdr-name {
-  font-size: 26px;
-  font-weight: 600;
-  color: var(--text-heading);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-.hdr-sub {
-  font-size: 13px;
-  color: var(--text-secondary);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  line-height: 1.8;
-}
-.hdr-sub a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  transition: color .2s;
-}
-.hdr-sub a:hover { color: var(--red); }
-
-/* ── panel ── */
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 0;
-  padding: 32px 36px;
-}
-
-/* ── seg label ── */
-.seg-label {
-  font-size: 11px;
-  letter-spacing: .18em;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-
-/* ── scrollable tab row ── */
-.seg-scroll {
-  overflow-x: auto;
-  margin-bottom: 40px;
-  padding-bottom: 8px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.seg-scroll::-webkit-scrollbar { display: none; }
-
-.seg {
-  position: relative;
-  display: inline-flex;
-  gap: 32px;
-  white-space: nowrap;
-  min-width: 100%;
-}
-
-.seg-item {
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-family: inherit;
-  font-weight: 400;
-  padding: 6px 0;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-  transition: color .15s;
-  white-space: nowrap;
-  background: none;
-  border: none;
-  outline: none;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
-.seg-item:hover { color: var(--text-link); }
-.seg-item.active {
-  color: var(--text-heading);
-  font-weight: 500;
-}
-
-.seg-track {
   position: absolute;
-  bottom: -1px;
-  left: 0;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--red-dim) 20%,
-    var(--red) 50%,
-    var(--red-dim) 80%,
-    transparent
-  );
-  border-radius: 0;
-  box-shadow: var(--track-glow);
-  transition:
-    left  .22s cubic-bezier(.4,0,.2,1),
-    width .22s cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
+  inset: 0;
+  opacity: var(--spot);
+  transition: opacity .45s var(--ease);
+  background-image: radial-gradient(circle at center, var(--dot-hi) 2.1px, transparent 2.2px);
+  background-size: 26px 26px;
+  background-position: var(--bx) var(--by);
+  -webkit-mask-image: radial-gradient(circle 240px at var(--mx) var(--my),
+                      #000 0%, rgba(0,0,0,.5) 45%, transparent 72%);
+          mask-image: radial-gradient(circle 240px at var(--mx) var(--my),
+                      #000 0%, rgba(0,0,0,.5) 45%, transparent 72%);
 }
 
-/* ── content panels ── */
-.content { display: none; }
-.content.active { display: block; }
+/* content sits above the grid */
+main, footer.wrap { position: relative; z-index: 1; }
 
-/* repo meta bar */
-.repo-meta {
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+.sr-only {
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ══════════════════════════════════════ 1. top bar ═══════════════════ */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bar-bg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border-mid);
+  justify-content: space-between;
+  gap: 16px;
 }
-.repo-link {
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--text-secondary);
+.topbar-name {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text);
+  white-space: nowrap;
+}
+.topbar-right { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.topbar-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.topbar-links a {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-2);
   text-decoration: none;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  transition: color .2s;
+  transition: color .18s var(--ease);
+  white-space: nowrap;
 }
-.repo-link:hover { color: var(--red); }
-.repo-count {
-  font-size: 12px;
-  color: var(--text-muted);
-  letter-spacing: .08em;
+.topbar-links a:hover { color: var(--text); }
+
+/* ══════════════════════════════════════ 2. hero ══════════════════════ */
+
+.hero {
+  text-align: center;
+  padding-top: clamp(72px, 14vh, 180px);
+  padding-bottom: clamp(72px, 10vh, 180px);
+}
+.hero-title {
+  font-family: var(--font-script);
+  font-weight: 700;
+  font-size: clamp(64px, 12vw, 148px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  color: var(--text);
+  /* keeps the tails of the L and the ! off the sub-line at every size */
+  padding-bottom: .12em;
+}
+.hero-sub {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-2);
+  max-width: 58ch;
+  margin: 14px auto 0;
 }
 
-/* chapter groups */
-.group { margin-bottom: 32px; }
-.group-label {
-  font-size: 11px;
-  letter-spacing: .14em;
-  color: var(--accent);
-  text-transform: uppercase;
-  margin-bottom: 2px;
+.rise { opacity: 0; transform: translateY(12px); }
+.rise.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+}
+
+/* ══════════════════════════════════════ sections ════════════════════ */
+
+.section { padding-bottom: 20px; }
+.section-title {
+  font-size: clamp(32px, 4.4vw, 48px);
+  font-weight: 600;
+  letter-spacing: -.03em;
+  line-height: 1.05;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+.section-gap { height: 84px; }
+
+/* ══════════════════════════════════════ 3. card grid ════════════════ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+/* auto-fit would keep adding columns on very wide viewports; cap at 4. */
+@media (min-width: 1180px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  position: relative;
+  background: var(--card-bg);
+  color: var(--card-fg);
+  border: 1px solid var(--card-border, transparent);
+  border-radius: 16px;
+  padding: 30px 30px 26px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform .22s var(--ease), box-shadow .22s var(--ease), filter .22s var(--ease);
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0,0,0,.14); }
+
+/* While one card is open the rest desaturate. Deliberately saturate() and not
+   opacity: the text and its card surface shift together, so every label keeps
+   its full contrast ratio. Fading them would break AA on the scope badge. */
+.grid.has-open .card:not(.is-open) { filter: saturate(.16); }
+.grid.has-open .card:not(.is-open):hover,
+.grid.has-open .card:not(.is-open):focus-within { filter: saturate(.85); }
+.card.is-open { box-shadow: inset 0 0 0 2px rgba(0,0,0,.14), inset 0 2px 10px rgba(0,0,0,.12); }
+html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255,255,.22); }
+
+/* The toggle covers the whole card. The arrow sits above it with a higher
+   stacking order so a click on the arrow never reaches the toggle. No <a>
+   is ever nested inside the <button>. */
+.card-toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.card-toggle:focus-visible { outline: 3px solid var(--card-fg); outline-offset: -6px; }
+
+.card-sign {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  z-index: 2;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1;
+  opacity: .58;
+}
+
+.card-body { position: relative; z-index: 0; pointer-events: none; }
+/* Titles and descriptions reserve a fixed number of lines so every card is
+   the same height. Without this, rows size to their own tallest card and the
+   grid shows uneven gutters between rows. */
+.card-title {
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  line-height: 1.05;
+  padding-right: 28px;
+  min-height: 2.1em;   /* two lines */
+}
+.card-desc {
+  font-size: 17px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 12px;
+  opacity: .9;
+  min-height: 4.2em;   /* three lines */
+}
+
+.card-foot {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 26px;
+}
+.card-badge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  opacity: .72;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-mid);
+}
+.card-arrow {
+  pointer-events: auto;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--card-fg);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: transform .22s var(--ease);
+}
+.card:hover .card-arrow { transform: translateX(4px); }
+.card-arrow:focus-visible { outline: 3px solid var(--card-fg); outline-offset: -3px; }
+
+@media (max-width: 600px) {
+  .card { min-height: 250px; padding: 26px 24px 22px; }
+  .card-title { font-size: 32px; }
 }
 
-/* chapter row */
+/* ══════════════════════════════════════ 4. expansion panel ══════════ */
+
+.panel {
+  grid-column: 1 / -1;
+  height: 0;
+  overflow: hidden;
+  transition: height .26s var(--ease);
+}
+.panel.is-static { height: auto; overflow: visible; transition: none; }
+
+.panel-inner {
+  background: var(--surface);
+  background: color-mix(in srgb, var(--panel-tint) var(--panel-mix), var(--surface));
+  border: 1px solid var(--rule);
+  border-color: color-mix(in srgb, var(--card-bg) 40%, transparent);
+  border-radius: 16px;
+  padding: 28px 30px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.panel-titles { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.panel-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+.panel-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--text-2);
+}
+.panel-actions { display: flex; align-items: center; gap: 14px; }
+.panel-open {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color .18s var(--ease);
+}
+.panel-open:hover { color: var(--text); }
+.panel-close {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; line-height: 1;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color .18s var(--ease), border-color .18s var(--ease);
+}
+.panel-close:hover { color: var(--text); border-color: var(--text-2); }
+
+.group { margin-bottom: 26px; }
+.group:last-child { margin-bottom: 0; }
+.group-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
 .ch {
   display: flex;
   align-items: baseline;
-  gap: 16px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--border);
-  transition: border-color .15s;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
 }
 .ch:last-child { border-bottom: none; }
-.ch:hover { border-color: var(--border-hover); }
-
 .ch-num {
+  font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
   min-width: 24px;
   flex-shrink: 0;
-  letter-spacing: .04em;
 }
 .ch-link {
-  color: var(--text-link);
-  font-size: 14px;
-  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
   text-decoration: none;
-  transition: color .15s;
   flex-shrink: 0;
-  letter-spacing: .03em;
+  border-bottom: 1px solid transparent;
+  transition: border-color .15s var(--ease);
 }
-.ch-link:hover { color: var(--red); }
+.ch-link:hover { border-bottom-color: var(--text); }
 .ch-link.planned {
-  color: var(--text-faint);
+  color: var(--text-3);
   cursor: default;
   pointer-events: none;
 }
-.ch-desc {
-  color: var(--text-dim);
-  font-size: 13px;
-  flex: 1;
-  min-width: 0;
-  letter-spacing: .02em;
-}
-
-/* metrics pill layout */
-.pill-group { margin-bottom: 24px; }
-.pill-group-label {
-  font-size: 11px;
-  letter-spacing: .14em;
-  color: var(--accent);
+.ch-desc { font-size: 14px; color: var(--text-2); flex: 1; min-width: 0; }
+.ch-planned-mark {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  margin-bottom: 0;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-mid);
+  color: var(--text-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 1px 8px;
+  flex-shrink: 0;
 }
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 12px 0;
-}
+
+.pills { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 0; }
 .pill {
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-family: inherit;
-  color: var(--pill-text);
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  border-radius: 0;
-  padding: 4px 10px;
-  letter-spacing: .06em;
+  color: var(--text);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 4px 11px;
   white-space: nowrap;
-  transition: color .15s, border-color .15s;
 }
-.pill:hover { color: var(--red); border-color: var(--red); }
 
-/* ── animated particle canvas ── */
-#bg-canvas {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 0;
-  pointer-events: none;
-  transition: opacity .4s;
+@media (max-width: 600px) {
+  .panel-inner { padding: 22px 18px; }
+  .ch { flex-wrap: wrap; gap: 3px 10px; }
+  .ch-desc { flex-basis: 100%; padding-left: 38px; }
 }
-html[data-theme="light"] #bg-canvas { opacity: 0; }
 
-/* ── theme toggle ── */
+/* ══════════════════════════════════════ 5. work in progress ═════════ */
+
+/* The gradient belongs to the section, not to the cards. Grey cards sit on
+   top of it, exactly as in the reference banner. The banner reads the same
+   in both themes, so the card colours are theme-independent. */
+.wip-banner {
+  position: relative;
+  border-radius: 24px;
+  padding: clamp(28px, 4vw, 48px);
+  background: linear-gradient(115deg,#7FD5D0 0%,#9FD9A8 28%,#EFC489 62%,#C9B6F2 100%);
+}
+.wip-banner .section-title { color: #16232B; margin-bottom: 28px; }
+
+.card-wip {
+  background: var(--wip-surface);
+  color: var(--wip-text);
+  border-radius: 16px;
+  padding: 28px 26px 24px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  cursor: default;
+}
+.card-wip .card-title { font-size: 28px; padding-right: 0; min-height: 0; }
+.card-wip .card-desc { font-size: 16px; min-height: 0; opacity: .82; }
+
+@media (max-width: 600px) {
+  .card-wip { min-height: 180px; padding: 24px 22px 20px; }
+  .card-wip .card-title { font-size: 25px; }
+}
+
+/* ══════════════════════════════════════ 6. about ════════════════════ */
+
+.about { padding: 64px 0; }
+.about-rule { border: 0; border-top: 1px solid var(--rule); }
+.about-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 16px;
+}
+.about-body {
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 62ch;
+}
+.about-body + .about-body { margin-top: 1.1em; }
+
+/* ══════════════════════════════════════ 7. footer ═══════════════════ */
+
+.footer {
+  border-top: 1px solid var(--rule);
+  padding: 22px 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-note { font-size: 14px; color: var(--text-2); }
+
 #theme-toggle {
-  position: fixed;
-  top: 16px;
-  right: 20px;
-  z-index: 10000;
   cursor: pointer;
-  display: inline-block;
-  width: 44px;
-  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
-#theme-toggle input {
-  display: none;
-}
+#theme-toggle input { position:absolute; opacity:0; width:0; height:0; }
 .toggle-knob {
   display: block;
-  width: 44px;
-  height: 26px;
-  border-radius: 13px;
-  background: var(--border-mid);
+  width: 40px; height: 23px;
+  border-radius: 12px;
+  background: var(--rule);
   position: relative;
-  transition: background .3s;
+  transition: background .3s var(--ease);
 }
 .toggle-knob::after {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
+  top: 3px; left: 3px;
+  width: 17px; height: 17px;
   border-radius: 50%;
-  background: var(--text-secondary);
-  transition: transform .3s, background .3s;
-  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+  background: var(--text-2);
+  transition: transform .3s var(--ease), background .3s var(--ease);
 }
-#theme-toggle input:checked ~ .toggle-knob {
-  background: var(--red-dim);
-}
-#theme-toggle input:checked ~ .toggle-knob::after {
-  transform: translateX(18px);
-  background: var(--accent);
+#theme-toggle input:checked ~ .toggle-knob::after { transform: translateX(17px); }
+#theme-toggle input:focus-visible ~ .toggle-knob { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* ══════════════════════════════════════ narrow screens ══════════════ */
+
+@media (max-width: 640px) {
+  .wrap { padding: 0 20px; }
+  .topbar-inner { padding: 12px 20px; }
+  .topbar-links { gap: 14px; }
+  .topbar-links a { font-size: 13px; }
+  .hero-sub { font-size: 17px; }
+  .section-gap { height: 60px; }
+  .about { padding: 48px 0; }
+  .about-body { font-size: 18px; }
 }
 
-/* ── mobile responsive ── */
-@media (max-width: 640px) {
-  body { padding: 28px 14px 60px; }
-  .panel { padding: 20px 16px; }
-  .hdr { margin-bottom: 32px; }
-  .hdr-name { font-size: 20px; letter-spacing: .08em; }
-  .hdr-sub {
-    font-size: 11px;
-    letter-spacing: .08em;
-    line-height: 2;
-  }
-  .seg { gap: 20px; }
-  .seg-item { font-size: 11px; }
-  .ch {
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    align-items: flex-start;
-  }
-  .ch-desc {
-    flex-basis: 100%;
-    padding-left: 32px;
-    font-size: 12px;
-  }
-  .ch-link { font-size: 13px; }
-  .ch-num { min-width: 24px; }
-  .repo-meta { flex-wrap: wrap; gap: 8px; }
+/* At 320px, 12vw is far below the 64px floor, so the floor itself has to
+   come down or the hero overflows the viewport horizontally. */
+@media (max-width: 420px) {
+  .hero-title { font-size: clamp(46px, 15vw, 64px); }
+  .topbar-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ══════════════════════════════════════ reduced motion ══════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise, .rise.in { opacity: 1; transform: none; transition: none; }
+  .dots { --bx: 0px !important; --by: 0px !important; }
+  .dots::after { display: none; }
+  .card, .card-arrow, .card:hover, .card:hover .card-arrow { transition: none; transform: none; }
+  .grid.has-open .card:not(.is-open) { transition: none; }
+  .card:hover { box-shadow: 0 0 0 2px var(--card-fg); }
+  .panel { transition: none; }
+  .toggle-knob, .toggle-knob::after { transition: none; }
 }
 </style>
 </head>
 <body>
-<canvas id="bg-canvas"></canvas>
-<label id="theme-toggle" title="Toggle light/dark theme">
-  <input type="checkbox" id="theme-toggle-input">
-  <span class="toggle-knob"></span>
-</label>
-<div class="wrap">
 
-<header class="hdr">
-  <div class="hdr-name">Karamjot Singh</div>
-  <div class="hdr-sub">
-    AI Research Scientist &nbsp;&middot;&nbsp;
-    Model Optimization &nbsp;&middot;&nbsp;
-    NUS Singapore &nbsp;&middot;&nbsp;
-    <a href="https://huggingface.co/karamjotsingh">HuggingFace / karamjotsingh</a>
+<div class="dots" id="dots" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="topbar-name">Karamjot Singh</span>
+    <div class="topbar-right">
+      <nav class="topbar-links" aria-label="Profiles">
+        <a href="https://github.com/karam-nus" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://huggingface.co/karamjotsingh" target="_blank" rel="noopener">HuggingFace ↗</a>
+        <a href="https://www.linkedin.com/in/karamjot-singh-nus/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      </nav>
+      <label id="theme-toggle" title="Toggle light/dark theme">
+        <span class="sr-only">Dark theme</span>
+        <input type="checkbox" id="theme-toggle-input">
+        <span class="toggle-knob"></span>
+      </label>
+    </div>
   </div>
 </header>
 
-<div class="panel">
-  <div class="seg-label">Knowledge Base</div>
-  <div class="seg-scroll">
-    <div class="seg" id="seg"></div>
-  </div>
-  <div id="content"></div>
-</div>
+<main>
 
-</div>
+  <section class="hero wrap">
+    <h1 class="hero-title rise" id="hero-title">Let&rsquo;s Learn!</h1>
+    <p class="hero-sub rise" id="hero-sub">
+      Chaptered guides to the models, hardware and engineering
+      behind modern AI.
+    </p>
+  </section>
+
+  <section class="section wrap" aria-labelledby="kb-title">
+    <h2 class="section-title" id="kb-title">Knowledge Base</h2>
+    <div class="grid" id="grid-live"></div>
+  </section>
+
+  <div class="section-gap"></div>
+
+  <div class="wrap">
+    <section class="wip-banner" aria-labelledby="wip-title">
+      <h2 class="section-title" id="wip-title">In Progress</h2>
+      <div class="grid" id="grid-wip"></div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section class="about" aria-labelledby="about-label">
+      <hr class="about-rule">
+      <div class="about-label" id="about-label" style="margin-top:64px">About</div>
+      <p class="about-body">
+        AI Research Scientist at Renesas Electronics&rsquo; HPC AI R&amp;D team in Singapore, building model
+        training, quantization and tuning frameworks for automotive AI &mdash; CNNs, ViTs and LLMs alike.
+      </p>
+      <p class="about-body">
+        Previously four years as a Senior ML Engineer at OmniVision Technologies shipping edge computer
+        vision. MTech in Intelligent Systems, NUS.
+      </p>
+    </section>
+  </div>
+
+</main>
+
+<footer class="wrap">
+  <div class="footer">
+    <span class="footer-note">&copy; Karamjot Singh &middot; built on GitHub Pages</span>
+  </div>
+</footer>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════════════
+   DATA
+   Each repo carries its chapter index plus three presentation fields:
+     blurb  — the card's one-liner
+     color  — palette token (ink lands on every 4th slot: index % 4 === 2,
+              so each full desktop row gets exactly one near-black card)
+     status — 'live' | 'wip'
+   `u: null` means the chapter is planned but not written; it renders dim
+   and non-clickable inside the expanded index.
+   The scope badge is NOT stored — it is counted from groups/pillGroups at
+   render time, so it can never drift from the actual index.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 const repos = [
   {
-    id:'lm', label:'LANG MODELLING',
+    id:'lm', label:'Language Modelling', color:'mint', status:'live',
+    blurb:'Transformers end to end — attention, training, quantization, serving',
     url:'https://karam-nus.github.io/language-modelling/',
-    count:'38 ch + 3 appendices',
     base:'https://karam-nus.github.io/language-modelling/',
     groups:[
       {name:'Foundations',chs:[
-        {n:'01',t:'Introduction to Language Modelling',u:'01_introduction',d:'text \u2192 tokens \u2192 tensors \u2192 predictions'},
+        {n:'01',t:'Introduction to Language Modelling',u:'01_introduction',d:'text → tokens → tensors → predictions'},
         {n:'02',t:'Embeddings & Representations',u:'02_embeddings',d:'dense vectors, RoPE, ALiBi, geometry of meaning'},
         {n:'03',t:'The Transformer',u:'03_the_transformer',d:'complete architecture walkthrough with tensor shapes'},
-        {n:'04',t:'Attention \u2014 SDPA & Multi-Head',u:'04_attention_sdpa_and_mha',d:'Q/K/V math, causal masking, Flash Attention'},
+        {n:'04',t:'Attention — SDPA & Multi-Head',u:'04_attention_sdpa_and_mha',d:'Q/K/V math, causal masking, Flash Attention'},
       ]},
       {name:'Attention & Architecture',chs:[
-        {n:'05',t:'Attention Variants \u2014 GQA, MQA & MLA',u:'05_attention_gqa_mqa_mla',d:'KV bottleneck, sliding window, tensor shape comparisons'},
+        {n:'05',t:'Attention Variants — GQA, MQA & MLA',u:'05_attention_gqa_mqa_mla',d:'KV bottleneck, sliding window, tensor shape comparisons'},
         {n:'06',t:'Decoder-Only Models',u:'06_decoder_only_models',d:'GPT family, LLaMA architecture, open-source landscape'},
-        {n:'07',t:'Encoder & Seq2Seq Models',u:'07_encoder_and_seq2seq_models',d:'BERT, T5, BART \u2014 encoder vs decoder vs encoder-decoder'},
+        {n:'07',t:'Encoder & Seq2Seq Models',u:'07_encoder_and_seq2seq_models',d:'BERT, T5, BART — encoder vs decoder vs encoder-decoder'},
         {n:'08',t:'Multimodal Models',u:'08_multimodal_models',d:'ViT, Whisper, modality fusion, image-to-token pipelines'},
       ]},
       {name:'Training',chs:[
@@ -440,17 +766,17 @@ const repos = [
         {n:'12',t:'Mid-Training & Continued Pre-Training',u:'12_mid_training',d:'long-context extension, domain adaptation, annealing'},
         {n:'13',t:'Fine-Tuning & Adaptation',u:'13_finetuning_and_adaptation',d:'SFT, LoRA, QLoRA'},
         {n:'14',t:'PEFT: LoRA, QLoRA & Variants',u:'14_peft_lora_and_variants',d:'rank decomposition math, DoRA, rsLoRA, VeRA'},
-        {n:'15',t:'Alignment \u2014 RLHF & Beyond',u:'15_alignment_rlhf_and_beyond',d:'reward models, PPO, DPO, Constitutional AI'},
+        {n:'15',t:'Alignment — RLHF & Beyond',u:'15_alignment_rlhf_and_beyond',d:'reward models, PPO, DPO, Constitutional AI'},
       ]},
       {name:'Inference & Generation',chs:[
         {n:'16',t:'Inference & Sampling Strategies',u:'16_inference_and_sampling',d:'temperature, top-k/p, speculative decoding, structured output'},
-        {n:'17',t:'KV-Cache \u2014 Mechanics & Memory',u:'17_kv_cache_mechanics',d:'tensor shapes through generation, memory calculations'},
-        {n:'18',t:'KV-Cache \u2014 Optimization Strategies',u:'18_kv_cache_optimization',d:'PagedAttention, continuous batching, KV quantization'},
+        {n:'17',t:'KV-Cache — Mechanics & Memory',u:'17_kv_cache_mechanics',d:'tensor shapes through generation, memory calculations'},
+        {n:'18',t:'KV-Cache — Optimization Strategies',u:'18_kv_cache_optimization',d:'PagedAttention, continuous batching, KV quantization'},
       ]},
       {name:'Quantization',chs:[
-        {n:'19',t:'Data Types & Numerical Precision',u:'19_data_types_and_precision',d:'FP32\u2192FP4 bit layouts, BF16 vs FP16'},
+        {n:'19',t:'Data Types & Numerical Precision',u:'19_data_types_and_precision',d:'FP32→FP4 bit layouts, BF16 vs FP16'},
         {n:'20',t:'Quantization Fundamentals',u:'20_quantization_fundamentals',d:'affine math, calibration, weight-only vs W+A'},
-        {n:'21',t:'Quantization Techniques \u2014 Full Landscape',u:'21_quantization_techniques',d:'GPTQ, AWQ, SmoothQuant, KIVI, BitNet'},
+        {n:'21',t:'Quantization Techniques — Full Landscape',u:'21_quantization_techniques',d:'GPTQ, AWQ, SmoothQuant, KIVI, BitNet'},
         {n:'22',t:'Quantization Benchmarks & Selection',u:'22_quantization_benchmarks',d:'perplexity vs bits, throughput benchmarks, GGUF guide'},
         {n:'23',t:'Knowledge Distillation & QAD',u:'23_knowledge_distillation',d:'feature distillation, fake quantization with STE'},
       ]},
@@ -476,122 +802,20 @@ const repos = [
         {n:'38',t:'The Frontier',u:'38_frontier',d:'long context, world models, safety, interpretability'},
       ]},
       {name:'Appendices',chs:[
-        {n:'A',t:'History of Language Modelling',u:'appendix_a_history',d:'Shannon \u2192 GPT-4 \u2014 every milestone and breakthrough'},
+        {n:'A',t:'History of Language Modelling',u:'appendix_a_history',d:'Shannon → GPT-4 — every milestone and breakthrough'},
         {n:'B',t:'Tokenization Deep Dive',u:'appendix_b_tokenization',d:'BPE, WordPiece, SentencePiece, training from scratch'},
         {n:'C',t:'HuggingFace Config Reference',u:'appendix_c_model_config',d:'every config.json parameter explained'},
       ]},
     ]
   },
   {
-    id:'models', label:'MODELS',
-    url:'https://karam-nus.github.io/models/',
-    count:'7 architecture families',
-    base:'https://karam-nus.github.io/models/',
-    groups:[
-      {name:'Model Families',chs:[
-        {n:'01',t:'Qwen',u:'01_Qwen',d:'v1 \u2192 1.5 \u2192 2 \u2192 2.5 \u2192 3'},
-        {n:'02',t:'Llama',u:'02_Llama',d:'v1 \u2192 2 \u2192 3 \u2192 3.1 \u2192 3.2 \u2192 3.3 \u2192 4'},
-        {n:'03',t:'DeepSeek',u:null,d:'V1 \u2192 V2 \u2192 V3 \u2192 R1 \u00b7 planned'},
-        {n:'04',t:'Gemma',u:'04_Gemma',d:'v1 \u2192 2 \u2192 3 \u2192 4'},
-        {n:'05',t:'Mistral',u:null,d:'7B \u2192 Mixtral \u2192 Large \u00b7 planned'},
-        {n:'06',t:'Phi',u:null,d:'v1 \u2192 1.5 \u2192 2 \u2192 3 \u2192 4 \u00b7 planned'},
-        {n:'07',t:'Alpamayo',u:'07_Alpamayo',d:'R1 \u2192 1.5 (VLA)'},
-      ]},
-    ]
-  },
-  {
-    id:'inference', label:'INFERENCE',
-    url:'https://karam-nus.github.io/inference/',
-    count:'12 chapters',
-    base:'https://karam-nus.github.io/inference/',
-    groups:[
-      {name:'',chs:[
-        {n:'01',t:'Grand Overview',u:'01_grand_overview',d:'full stack: PyTorch model \u2192 hardware execution'},
-        {n:'02',t:'Glossary & Concept Map',u:'02_glossary_and_concept_map',d:'every term defined + visual relationship maps'},
-        {n:'03',t:'Inference Engines Deep Dive',u:'03_inference_engines',d:'vLLM, SGLang, llama.cpp, TensorRT-LLM \u2014 compared'},
-        {n:'04',t:'Runtimes & Backends',u:'04_runtimes_and_backends',d:'ONNX Runtime, CUDA, ROCm, OpenVINO, ExecuTorch'},
-        {n:'05',t:'Hardware Landscape',u:'05_hardware_landscape',d:'NVIDIA, AMD, Intel, TPUs, NPUs, custom ASICs'},
-        {n:'06',t:'Quantization to Deployment Bridge',u:'06_quantization_to_deployment',d:'how your quantized model gets deployed end-to-end'},
-        {n:'07',t:'Company Landscape',u:'07_company_landscape',d:'NVIDIA, Renesas, Synopsys, Qualcomm'},
-        {n:'08',t:'Model Formats & Serialization',u:'08_model_formats',d:'GGUF, ONNX, SafeTensors, TorchScript'},
-        {n:'09',t:'Serving Infrastructure & Middleware',u:'09_serving_and_middleware',d:'Triton, KServe, API gateways, load balancers'},
-        {n:'10',t:'Edge & Embedded Deployment',u:'10_edge_and_embedded',d:'TFLite, ExecuTorch, microcontrollers, Renesas MCUs'},
-        {n:'11',t:'Compiler Stack',u:'11_compiler_stack',d:'TVM, XLA, Triton compiler, MLIR'},
-        {n:'12',t:'Practical Code Guide',u:'12_practical_code_guide',d:'PyTorch \u2192 quantize \u2192 export \u2192 deploy \u2192 serve'},
-      ]},
-    ]
-  },
-  {
-    id:'agents', label:'AGENTS',
-    url:'https://karam-nus.github.io/agents/',
-    count:'14 chapters',
-    base:'https://karam-nus.github.io/agents/',
-    groups:[
-      {name:'Foundation',chs:[
-        {n:'01',t:'What Are Agents?',u:'01_what_are_agents',d:'definition, paradigm shift, when to use agents vs plain LLMs'},
-        {n:'02',t:'History & Evolution',u:'02_history_and_evolution',d:'ELIZA \u2192 expert systems \u2192 ReAct \u2192 autonomous agents'},
-        {n:'03',t:'Anatomy of an Agent',u:'03_anatomy_of_an_agent',d:'the 4 pillars: LLM brain, tools, memory, planning'},
-        {n:'04',t:'The Agent Loop',u:'04_the_agent_loop',d:'observe \u2192 think \u2192 act cycle, autonomous execution'},
-      ]},
-      {name:'Core Capabilities',chs:[
-        {n:'05',t:'Tools & Function Calling',u:'05_tools_and_function_calling',d:'function calling APIs, MCP protocol, custom tools'},
-        {n:'06',t:'Memory Systems',u:'06_memory_systems',d:'working memory, short/long-term, vector stores, RAG'},
-        {n:'07',t:'Planning & Reasoning',u:'07_planning_and_reasoning',d:'CoT, ReAct, Reflexion, task decomposition, self-correction'},
-      ]},
-      {name:'Scaling Up',chs:[
-        {n:'08',t:'Multi-Agent Systems',u:'08_multi_agent_systems',d:'communication patterns, supervisor & swarm architectures'},
-        {n:'09',t:'Agentic Frameworks & SDKs',u:'09_agentic_frameworks',d:'LangGraph, CrewAI, AutoGen, OpenAI Agents SDK'},
-      ]},
-      {name:'Hands-On & Production',chs:[
-        {n:'10',t:'Build Your First Agent',u:'10_build_your_first_agent',d:'research assistant with OpenAI SDK + LangGraph'},
-        {n:'11',t:'Agentic Design Patterns',u:'11_agentic_design_patterns',d:'router, orchestrator-worker, evaluator-optimizer, HITL'},
-        {n:'12',t:'Deployment & Production',u:'12_deployment_and_production',d:'observability, cost management, safety guardrails'},
-        {n:'13',t:'Open Source Landscape',u:'13_open_source_landscape',d:'30+ curated projects: frameworks, apps, benchmarks, infra'},
-        {n:'14',t:'Career Guide',u:'14_career_guide',d:'skills roadmap, portfolio projects, interview topics'},
-      ]},
-    ]
-  },
-  {
-    id:'nvidia', label:'NVIDIA',
-    url:'https://karam-nus.github.io/nvidia/',
-    count:'13 ch + 2 appendices',
-    base:'https://karam-nus.github.io/nvidia/',
-    groups:[
-      {name:'Foundations',chs:[
-        {n:'01',t:'GPU Fundamentals',u:'01_gpu_fundamentals',d:'CPU vs GPU, data types, memory hierarchy, roofline model'},
-        {n:'02',t:'GPU Microarchitecture',u:'02_gpu_microarchitecture',d:'Streaming Multiprocessors, Tensor Cores, warp execution'},
-        {n:'03',t:'CUDA Programming',u:'03_cuda_programming',d:'kernels, memory management, streams, Python bindings'},
-      ]},
-      {name:'Software Stack',chs:[
-        {n:'04',t:'NVIDIA Libraries',u:'04_nvidia_libraries',d:'cuBLAS, cuDNN, NCCL, CUTLASS, cuSPARSE'},
-        {n:'05',t:'Optimization Stack',u:'05_optimization_stack',d:'TensorRT, TensorRT-LLM, ModelOpt, Triton Inference Server'},
-        {n:'06',t:'NVIDIA Models',u:'06_nvidia_models',d:'Nemotron, Alpamayo, NeMo, ASR/TTS, NIM microservices'},
-      ]},
-      {name:'Scaling',chs:[
-        {n:'07',t:'Parallelism on GPUs',u:'07_parallelism',d:'data, tensor, pipeline, expert parallelism, ZeRO'},
-        {n:'08',t:'GPU Generations',u:'08_gpu_generations',d:'GeForce 30\u219250, H100, H200, B200 \u2014 features & VRAM'},
-        {n:'09',t:'NVIDIA CPUs',u:'09_nvidia_cpus',d:'Grace CPU, Grace Hopper Superchip, ARM in data center'},
-      ]},
-      {name:'Infrastructure & Economics',chs:[
-        {n:'10',t:'Multi-GPU Interconnects',u:'10_multi_gpu_interconnects',d:'NVLink, NVSwitch, PCIe, InfiniBand'},
-        {n:'11',t:'Data Center Architectures',u:'11_data_center_architectures',d:'DGX, HGX, SuperPOD, DGX Cloud, full rack design'},
-        {n:'12',t:'GPU Economics & Tokenomics',u:'12_gpu_economics',d:'cost per token, TCO analysis, cloud vs on-prem'},
-        {n:'13',t:'ASICs & GPU Competitors',u:'13_asics_and_competitors',d:'Cerebras, Groq, Google TPU, Intel Gaudi'},
-      ]},
-      {name:'Appendices',chs:[
-        {n:'A',t:'Company History & Timeline',u:'appendix_a_company_history',d:"from a Denny\u2019s booth (1993) to $3T market cap"},
-        {n:'B',t:'Future Roadmap',u:'appendix_b_future_roadmap',d:'Rubin, Vera, photonic interconnects, quantum'},
-      ]},
-    ]
-  },
-  {
-    id:'vision', label:'VISION',
+    id:'vision', label:'Vision', color:'sky', status:'live',
+    blurb:'Pixels to predictions — CV tasks, architectures, optimization, deployment',
     url:'https://karam-nus.github.io/vision/',
-    count:'42 ch + 3 appendices',
     base:'https://karam-nus.github.io/vision/',
     groups:[
       {name:'Overview & Foundations',chs:[
-        {n:'00',t:'Grand Overview',u:'00_grand_overview',d:'full CV landscape \u2014 tasks, history, benchmarks'},
+        {n:'00',t:'Grand Overview',u:'00_grand_overview',d:'full CV landscape — tasks, history, benchmarks'},
         {n:'01',t:'Image Fundamentals',u:'01_image_fundamentals',d:'images as tensors [B,C,H,W], color spaces, preprocessing'},
       ]},
       {name:'Use Cases',chs:[
@@ -599,7 +823,7 @@ const repos = [
         {n:'03',t:'Object Detection',u:'03_object_detection',d:'two-stage vs one-stage, NMS deep dive, mAP'},
         {n:'04',t:'Semantic Segmentation',u:'04_semantic_segmentation',d:'encoder-decoder, dilated convolutions, mIoU'},
         {n:'05',t:'Instance Segmentation',u:'05_instance_segmentation',d:'Mask R-CNN, SAM, query-based methods'},
-        {n:'06',t:'Object Tracking',u:'06_object_tracking',d:'Kalman filter, Hungarian algorithm, SORT \u2192 ByteTrack'},
+        {n:'06',t:'Object Tracking',u:'06_object_tracking',d:'Kalman filter, Hungarian algorithm, SORT → ByteTrack'},
         {n:'07',t:'Pose Estimation',u:'07_pose_estimation',d:'keypoints, heatmaps, PAF, top-down vs bottom-up'},
         {n:'08',t:'Face Recognition',u:'08_face_recognition',d:'detection, alignment, ArcFace/CosFace/SphereFace'},
         {n:'09',t:'Depth Estimation',u:'09_depth_estimation',d:'stereo, monocular depth, LiDAR fusion'},
@@ -614,7 +838,7 @@ const repos = [
       {name:'Architectures',chs:[
         {n:'17',t:'CNN Fundamentals',u:'17_cnn_fundamentals',d:'convolution math, receptive fields, depthwise convs'},
         {n:'18',t:'Classification Architectures',u:'18_classification_architectures',d:'ResNet, MobileNet, EfficientNet, ViT, Swin, ConvNeXt'},
-        {n:'19',t:'Detection Architectures',u:'19_detection_architectures',d:'YOLO v1\u2192v11, Faster R-CNN, DETR, RT-DETR'},
+        {n:'19',t:'Detection Architectures',u:'19_detection_architectures',d:'YOLO v1→v11, Faster R-CNN, DETR, RT-DETR'},
         {n:'20',t:'Segmentation Architectures',u:'20_segmentation_architectures',d:'FCN, U-Net, DeepLab v3+, Mask2Former, SAM'},
         {n:'21',t:'Pose Architectures',u:'21_pose_architectures',d:'HRNet, ViTPose, OpenPose, WholeBody'},
         {n:'22',t:'Face Architectures',u:'22_face_architectures',d:'MTCNN, RetinaFace, MobileFaceNet, ArcFace'},
@@ -642,52 +866,176 @@ const repos = [
         {n:'38',t:'Evaluation & Benchmarks',u:'38_evaluation_and_benchmarks',d:'mAP computation, OKS, HOTA, FID, Rank-1'},
       ]},
       {name:'Frontier',chs:[
-        {n:'39',t:'Vision\u2013Language Models',u:'39_vision_language_models',d:'CLIP ecosystem, GPT-4V, Gemini Vision'},
+        {n:'39',t:'Vision–Language Models',u:'39_vision_language_models',d:'CLIP ecosystem, GPT-4V, Gemini Vision'},
         {n:'40',t:'Foundation Models',u:'40_foundation_models',d:'SAM, DINOv2, Florence-2, InternVL'},
         {n:'41',t:'Generative Vision',u:'41_generative_vision',d:'GANs, VAEs, DDPM, Stable Diffusion, ControlNet'},
         {n:'42',t:'The Frontier',u:'42_frontier',d:'world models, 3DGS, embodied AI, neuromorphic vision'},
       ]},
       {name:'Appendices',chs:[
-        {n:'A',t:'History of Computer Vision',u:'appendix_a_history',d:'Hubel & Wiesel \u2192 SAM 2'},
+        {n:'A',t:'History of Computer Vision',u:'appendix_a_history',d:'Hubel & Wiesel → SAM 2'},
         {n:'B',t:'Math Foundations',u:'appendix_b_math_foundations',d:'linear algebra, convolutions, Fourier, probability'},
         {n:'C',t:'Glossary',u:'appendix_c_glossary',d:'every key term, acronym, and metric defined'},
       ]},
     ]
   },
   {
-    id:'evals', label:'EVALS',
-    url:'https://karam-nus.github.io/evals/',
-    count:'4 benchmarks',
-    base:'https://karam-nus.github.io/evals/',
+    id:'nvidia', label:'NVIDIA', color:'ink', status:'live',
+    blurb:'Silicon to supercomputers — GPUs, CUDA, interconnects, data centers',
+    url:'https://karam-nus.github.io/nvidia/',
+    base:'https://karam-nus.github.io/nvidia/',
     groups:[
-      {name:'',chs:[
-        {n:'01',t:'Wikitext Perplexity',u:'01_wikitext_perplexity',d:'language modelling quality, training progress, regression detection'},
-        {n:'02',t:'MMLU',u:'02_mmlu',d:'broad academic knowledge across 57 subjects'},
-        {n:'03',t:'MMMU',u:'03_mmmu',d:'college-level multimodal understanding across 30 subjects'},
-        {n:'04',t:'RealWorldQA',u:'04_realworldqa',d:'real-world spatial and visual understanding from photos'},
+      {name:'Foundations',chs:[
+        {n:'01',t:'GPU Fundamentals',u:'01_gpu_fundamentals',d:'CPU vs GPU, data types, memory hierarchy, roofline model'},
+        {n:'02',t:'GPU Microarchitecture',u:'02_gpu_microarchitecture',d:'Streaming Multiprocessors, Tensor Cores, warp execution'},
+        {n:'03',t:'CUDA Programming',u:'03_cuda_programming',d:'kernels, memory management, streams, Python bindings'},
+      ]},
+      {name:'Software Stack',chs:[
+        {n:'04',t:'NVIDIA Libraries',u:'04_nvidia_libraries',d:'cuBLAS, cuDNN, NCCL, CUTLASS, cuSPARSE'},
+        {n:'05',t:'Optimization Stack',u:'05_optimization_stack',d:'TensorRT, TensorRT-LLM, ModelOpt, Triton Inference Server'},
+        {n:'06',t:'NVIDIA Models',u:'06_nvidia_models',d:'Nemotron, Alpamayo, NeMo, ASR/TTS, NIM microservices'},
+      ]},
+      {name:'Scaling',chs:[
+        {n:'07',t:'Parallelism on GPUs',u:'07_parallelism',d:'data, tensor, pipeline, expert parallelism, ZeRO'},
+        {n:'08',t:'GPU Generations',u:'08_gpu_generations',d:'GeForce 30→50, H100, H200, B200 — features & VRAM'},
+        {n:'09',t:'NVIDIA CPUs',u:'09_nvidia_cpus',d:'Grace CPU, Grace Hopper Superchip, ARM in data center'},
+      ]},
+      {name:'Infrastructure & Economics',chs:[
+        {n:'10',t:'Multi-GPU Interconnects',u:'10_multi_gpu_interconnects',d:'NVLink, NVSwitch, PCIe, InfiniBand'},
+        {n:'11',t:'Data Center Architectures',u:'11_data_center_architectures',d:'DGX, HGX, SuperPOD, DGX Cloud, full rack design'},
+        {n:'12',t:'GPU Economics & Tokenomics',u:'12_gpu_economics',d:'cost per token, TCO analysis, cloud vs on-prem'},
+        {n:'13',t:'ASICs & GPU Competitors',u:'13_asics_and_competitors',d:'Cerebras, Groq, Google TPU, Intel Gaudi'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'Company History & Timeline',u:'appendix_a_company_history',d:"from a Denny’s booth (1993) to $3T market cap"},
+        {n:'B',t:'Future Roadmap',u:'appendix_b_future_roadmap',d:'Rubin, Vera, photonic interconnects, quantum'},
       ]},
     ]
   },
   {
-    id:'metrics', label:'METRICS',
-    url:'https://karam-nus.github.io/metrics/',
-    count:'58 metrics \u00b7 8 domains',
-    base:'https://karam-nus.github.io/metrics/',
-    pillGroups:[
-      {name:'Tensor Comparison & Numerical Debugging',pills:['Cosine Similarity','RMSE','RRMSE','MAE','torch.allclose','SNR','SQNR','KL Divergence','L1/L2 Norm Diff','Max Absolute Error','Pearson/Spearman']},
-      {name:'General Regression',pills:['MSE','RMSE','MAE','MAPE','R\u00b2','Huber Loss','SMAPE']},
-      {name:'Classification',pills:['Accuracy','Precision','Recall','F1','ROC-AUC','PR-AUC','MCC','Cohen\u2019s Kappa','Specificity','Top-K Accuracy']},
-      {name:'Object Detection',pills:['mAP','Average Recall','IoU','GIoU','DIoU','CIoU']},
-      {name:'Segmentation',pills:['Dice','IoU (Jaccard)','Pixel Accuracy','Boundary F1']},
-      {name:'Generative & Distribution Quality',pills:['FID','Inception Score','LPIPS','SSIM','PSNR','BLEU','ROUGE','METEOR','CIDEr','BERTScore']},
-      {name:'Ranking & Retrieval',pills:['NDCG','MRR','Precision@K','Recall@K','MAP@K']},
-      {name:'Calibration & Uncertainty',pills:['ECE','MCE','Brier Score','NLL','Reliability Diagrams']},
+    id:'inference', label:'Inference', color:'peach', status:'live',
+    blurb:'Quantized model to production — engines, runtimes, compilers, serving',
+    url:'https://karam-nus.github.io/inference/',
+    base:'https://karam-nus.github.io/inference/',
+    groups:[
+      {name:'',chs:[
+        {n:'01',t:'Grand Overview',u:'01_grand_overview',d:'full stack: PyTorch model → hardware execution'},
+        {n:'02',t:'Glossary & Concept Map',u:'02_glossary_and_concept_map',d:'every term defined + visual relationship maps'},
+        {n:'03',t:'Inference Engines Deep Dive',u:'03_inference_engines',d:'vLLM, SGLang, llama.cpp, TensorRT-LLM — compared'},
+        {n:'04',t:'Runtimes & Backends',u:'04_runtimes_and_backends',d:'ONNX Runtime, CUDA, ROCm, OpenVINO, ExecuTorch'},
+        {n:'05',t:'Hardware Landscape',u:'05_hardware_landscape',d:'NVIDIA, AMD, Intel, TPUs, NPUs, custom ASICs'},
+        {n:'06',t:'Quantization to Deployment Bridge',u:'06_quantization_to_deployment',d:'how your quantized model gets deployed end-to-end'},
+        {n:'07',t:'Company Landscape',u:'07_company_landscape',d:'NVIDIA, Renesas, Synopsys, Qualcomm'},
+        {n:'08',t:'Model Formats & Serialization',u:'08_model_formats',d:'GGUF, ONNX, SafeTensors, TorchScript'},
+        {n:'09',t:'Serving Infrastructure & Middleware',u:'09_serving_and_middleware',d:'Triton, KServe, API gateways, load balancers'},
+        {n:'10',t:'Edge & Embedded Deployment',u:'10_edge_and_embedded',d:'TFLite, ExecuTorch, microcontrollers, Renesas MCUs'},
+        {n:'11',t:'Compiler Stack',u:'11_compiler_stack',d:'TVM, XLA, Triton compiler, MLIR'},
+        {n:'12',t:'Practical Code Guide',u:'12_practical_code_guide',d:'PyTorch → quantize → export → deploy → serve'},
+      ]},
     ]
   },
   {
-    id:'software', label:'SOFTWARE',
+    id:'agents', label:'Agents', color:'salmon', status:'live',
+    blurb:'Zero to agent developer — tools, memory, planning, multi-agent systems',
+    url:'https://karam-nus.github.io/agents/',
+    base:'https://karam-nus.github.io/agents/',
+    groups:[
+      {name:'Foundation',chs:[
+        {n:'01',t:'What Are Agents?',u:'01_what_are_agents',d:'definition, paradigm shift, when to use agents vs plain LLMs'},
+        {n:'02',t:'History & Evolution',u:'02_history_and_evolution',d:'ELIZA → expert systems → ReAct → autonomous agents'},
+        {n:'03',t:'Anatomy of an Agent',u:'03_anatomy_of_an_agent',d:'the 4 pillars: LLM brain, tools, memory, planning'},
+        {n:'04',t:'The Agent Loop',u:'04_the_agent_loop',d:'observe → think → act cycle, autonomous execution'},
+      ]},
+      {name:'Core Capabilities',chs:[
+        {n:'05',t:'Tools & Function Calling',u:'05_tools_and_function_calling',d:'function calling APIs, MCP protocol, custom tools'},
+        {n:'06',t:'Memory Systems',u:'06_memory_systems',d:'working memory, short/long-term, vector stores, RAG'},
+        {n:'07',t:'Planning & Reasoning',u:'07_planning_and_reasoning',d:'CoT, ReAct, Reflexion, task decomposition, self-correction'},
+      ]},
+      {name:'Scaling Up',chs:[
+        {n:'08',t:'Multi-Agent Systems',u:'08_multi_agent_systems',d:'communication patterns, supervisor & swarm architectures'},
+        {n:'09',t:'Agentic Frameworks & SDKs',u:'09_agentic_frameworks',d:'LangGraph, CrewAI, AutoGen, OpenAI Agents SDK'},
+      ]},
+      {name:'Hands-On & Production',chs:[
+        {n:'10',t:'Build Your First Agent',u:'10_build_your_first_agent',d:'research assistant with OpenAI SDK + LangGraph'},
+        {n:'11',t:'Agentic Design Patterns',u:'11_agentic_design_patterns',d:'router, orchestrator-worker, evaluator-optimizer, HITL'},
+        {n:'12',t:'Deployment & Production',u:'12_deployment_and_production',d:'observability, cost management, safety guardrails'},
+        {n:'13',t:'Open Source Landscape',u:'13_open_source_landscape',d:'30+ curated projects: frameworks, apps, benchmarks, infra'},
+        {n:'14',t:'Career Guide',u:'14_career_guide',d:'skills roadmap, portfolio projects, interview topics'},
+      ]},
+    ]
+  },
+  {
+    id:'chips', label:'Chips', color:'sand', status:'live',
+    blurb:'From sand to supercomputers — the silicon behind every optimization decision',
+    url:'https://karam-nus.github.io/chips/',
+    base:'https://karam-nus.github.io/chips/',
+    groups:[
+      {name:'Foundations — What Is a Chip?',chs:[
+        {n:'01',t:'What Is a Chip?',u:'01_what_is_a_chip',d:'sand → silicon → transistors, the MOSFET, Moore’s Law'},
+        {n:'02',t:'Transistors to Logic',u:'02_transistors_to_logic',d:'Boolean algebra, gates, flip-flops, the ALU'},
+        {n:'03',t:'Number Representation',u:'03_number_representation',d:'two’s complement, fixed vs floating point, IEEE-754'},
+        {n:'04',t:'Anatomy of a Processor',u:'04_anatomy_of_a_processor',d:'von Neumann vs Harvard, datapath, the clock, pipelining'},
+        {n:'05',t:'Instruction Sets',u:'05_instruction_sets',d:'ISA vs microarchitecture, RISC vs CISC, x86/ARM/RISC-V'},
+        {n:'06',t:'Languages & Nomenclature',u:'06_languages_and_nomenclature',d:'firmware, microcode, Verilog/VHDL, HLS, CUDA, Triton'},
+        {n:'07',t:'Types of Chips — Taxonomy',u:'07_types_of_chips_taxonomy',d:'CPU/GPU/TPU/NPU/DSP/ISP/FPGA/ASIC/SoC in one map'},
+      ]},
+      {name:'Parallelism, Memory & Movement',chs:[
+        {n:'08',t:'Parallel Processing',u:'08_parallel_processing',d:'ILP, SIMD/SIMT, multicore, Flynn, Amdahl vs Gustafson'},
+        {n:'09',t:'Memory Types',u:'09_memory_types',d:'registers, SRAM, DRAM, DDR/GDDR/HBM — latency & bandwidth'},
+        {n:'10',t:'Memory Management',u:'10_memory_management',d:'virtual memory, MMU/TLB, cache coherence, NUMA'},
+        {n:'11',t:'Memory Wall & Bandwidth',u:'11_memory_wall_and_bandwidth',d:'roofline, arithmetic intensity — why bandwidth bounds ML'},
+        {n:'12',t:'Buses & Interconnects',u:'12_buses_and_interconnects',d:'NoC, AXI, PCIe, CXL, NVLink, UALink — topologies'},
+        {n:'13',t:'Reliability & Fault Tolerance',u:'13_reliability_and_fault_tolerance',d:'ECC, RAS, soft errors, silent data corruption'},
+      ]},
+      {name:'The Chips Themselves',chs:[
+        {n:'14',t:'CPUs',u:'14_cpus',d:'out-of-order superscalar cores, branch prediction, caches'},
+        {n:'15',t:'GPUs',u:'15_gpus',d:'SIMT, SMs, warps, tensor cores — why GPUs won ML'},
+        {n:'16',t:'TPUs & Systolic Arrays',u:'16_tpus_and_systolic_arrays',d:'systolic arrays, matrix units, TPU v1 → Trillium'},
+        {n:'17',t:'NPUs & Edge AI',u:'17_npus_and_edge_ai',d:'Apple Neural Engine, Qualcomm Hexagon, Renesas DRP-AI'},
+        {n:'18',t:'DSPs',u:'18_dsps',d:'MAC units, VLIW, signal-processing pipelines'},
+        {n:'19',t:'ISPs',u:'19_isps',d:'image signal processors and the camera pipeline'},
+        {n:'20',t:'FPGAs',u:'20_fpgas',d:'LUTs, reconfigurable fabric, AI on FPGA'},
+        {n:'21',t:'ASICs',u:'21_asics',d:'the FPGA→ASIC spectrum, NRE, the AI-ASIC boom'},
+        {n:'22',t:'SoCs',u:'22_socs',d:'integration, chiplets, heterogeneous compute, Apple M-series'},
+      ]},
+      {name:'Datatypes',chs:[
+        {n:'23',t:'Number Formats Deep Dive',u:'23_number_formats_deep_dive',d:'FP32→FP4, INT8→INT1, microscaling (MXFP, NVFP4)'},
+        {n:'24',t:'Datatypes & Silicon',u:'24_datatypes_and_silicon',d:'how a format reshapes the multiplier and tensor core'},
+      ]},
+      {name:'Optimization — Hardware View',chs:[
+        {n:'25',t:'Quantization — Hardware View',u:'25_quantization_hardware_view',d:'how low precision saves area, power and bandwidth'},
+        {n:'26',t:'Sparsity — Hardware View',u:'26_sparsity_hardware_view',d:'structured 2:4 sparsity, sparse tensor cores, real limits'},
+      ]},
+      {name:'From Hardware to Usage',chs:[
+        {n:'27',t:'Why GPUs Won AI',u:'27_why_gpus_won_ai',d:'GPU parallelism mapped onto neural-net math'},
+        {n:'28',t:'Multi-GPU & Distributed Training',u:'28_multi_gpu_and_distributed_training',d:'DP/TP/PP/EP, FSDP, ZeRO — why 70B won’t fit on one GPU'},
+        {n:'29',t:'Memory Hierarchy in Action',u:'29_memory_hierarchy_in_action',d:'how memory limits drive KV-cache, batching, offloading'},
+        {n:'30',t:'Datatypes Drive Optimization',u:'30_datatypes_drive_optimization_choices',d:'when INT8, when FP8, when 2:4 sparsity'},
+      ]},
+      {name:'Design, Verification & Test',chs:[
+        {n:'31',t:'Chip Design Flow',u:'31_chip_design_flow',d:'spec → RTL → synthesis → place & route → tapeout'},
+        {n:'32',t:'Verification & Validation',u:'32_chip_verification_and_validation',d:'simulation, UVM, formal, coverage, DFT, post-silicon'},
+      ]},
+      {name:'The Industry',chs:[
+        {n:'33',t:'Design-Paradigm Wars',u:'33_design_paradigm_wars',d:'NVIDIA vs AMD vs Intel vs ARM — how the lead changed hands'},
+        {n:'34',t:'Generational Improvements',u:'34_generational_improvements',d:'process nodes, bandwidth growth, tabulated family histories'},
+        {n:'35',t:'Where the Industry Is Headed',u:'35_where_the_industry_is_headed',d:'chiplets, 3D stacking, CXL, co-packaged optics, post-Moore'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'How Chips Are Made',u:'appendix_a_how_chips_are_made',d:'wafer → fab → EUV → etch → packaging → test, yield & binning'},
+        {n:'B',t:'Foundry Ecosystem',u:'appendix_b_foundry_ecosystem',d:'TSMC/Samsung/Intel, the fabless model, EDA tools, IP cores'},
+        {n:'C',t:'Photonics',u:'appendix_c_photonics',d:'silicon photonics, co-packaged optics, optical compute'},
+        {n:'D',t:'Power & Thermals',u:'appendix_d_power_and_thermals',d:'power delivery, DVFS, cooling, performance-per-watt'},
+        {n:'E',t:'Packaging & Integration',u:'appendix_e_packaging',d:'2.5D/3D, CoWoS, interposers, HBM stacking, chiplets/UCIe'},
+        {n:'F',t:'Glossary',u:'appendix_f_glossary',d:'every acronym and term in one place'},
+        {n:'G',t:'Resources',u:'appendix_g_resources',d:'books, courses, channels, blogs, papers, podcasts'},
+        {n:'H',t:'The Life of a Running Computer',u:'appendix_h_how_a_computer_runs',d:'power-on, interrupts, the scheduler, what “idle” really is'},
+      ]},
+    ]
+  },
+  {
+    id:'software', label:'Software Engineering', color:'ink', status:'live',
+    blurb:'Scripts to production — engineering practice for ML practitioners',
     url:'https://karam-nus.github.io/software/',
-    count:'20 ch + 3 appendices',
     base:'https://karam-nus.github.io/software/',
     groups:[
       {name:'Foundations',chs:[
@@ -719,273 +1067,557 @@ const repos = [
         {n:'20',t:'ML System Design',u:'20_ml_system_design',d:'model registry, feature stores, A/B testing, MLOps'},
       ]},
       {name:'Appendices',chs:[
-        {n:'A',t:'Package Management Deep Dive',u:'appendix_a_package_management',d:'conda vs uv vs pip \u2014 complete workflows'},
+        {n:'A',t:'Package Management Deep Dive',u:'appendix_a_package_management',d:'conda vs uv vs pip — complete workflows'},
         {n:'B',t:'Unix & Shell Essentials',u:'appendix_b_unix_and_shell',d:'shell scripting, SSH, tmux, cron, dotfiles'},
         {n:'C',t:'VSCode Advanced Setup',u:'appendix_c_vscode_setup',d:'extensions, debugging configs, remote dev, Copilot'},
       ]},
     ]
   },
+  {
+    id:'design-patterns', label:'Design Patterns', color:'pink', status:'live',
+    blurb:'GoF to agentic AI — design patterns for Python, ML and production systems',
+    url:'https://karam-nus.github.io/design-patterns/',
+    base:'https://karam-nus.github.io/design-patterns/',
+    groups:[
+      {name:'Foundations',chs:[
+        {n:'01',t:'Introduction to Design Patterns',u:'01_introduction',d:'GoF history, the creational/structural/behavioral taxonomy'},
+        {n:'02',t:'SOLID Principles in Python',u:'02_solid_principles',d:'all five, with dataset, model-head and trainer examples'},
+        {n:'03',t:'Python Idioms & Protocols',u:'03_python_idioms',d:'context managers, descriptors, ABCs, Protocol, dataclasses'},
+      ]},
+      {name:'Creational Patterns',chs:[
+        {n:'04',t:'Factory & Abstract Factory',u:'04_factory',d:'model, loss, dataset and transform factories from config'},
+        {n:'05',t:'Builder Pattern',u:'05_builder',d:'pipeline and config builders without telescoping constructors'},
+        {n:'06',t:'Singleton, Borg & Registry',u:'06_registry',d:'config and model registries, plugin systems, safe global state'},
+        {n:'07',t:'Prototype & Object Pool',u:'07_prototype',d:'model cloning, GPU memory pools, tensor buffer reuse'},
+        {n:'08',t:'Dependency Injection',u:'08_dependency_injection',d:'inversion of control, interface-based design, testability'},
+      ]},
+      {name:'Structural Patterns',chs:[
+        {n:'09',t:'Composite & Module Hierarchy',u:'09_composite',d:'nn.Module as a composite tree, recursive forward()'},
+        {n:'10',t:'Adapter & Bridge',u:'10_adapter_bridge',d:'HuggingFace ↔ PyTorch bridges, data format adapters'},
+        {n:'11',t:'Decorator & Wrapper',u:'11_decorator',d:'augmentation wrappers, timing, caching, instrumentation'},
+        {n:'12',t:'Facade & Service Layer',u:'12_facade',d:'Trainer, Pipeline — unified APIs that hide complexity'},
+        {n:'13',t:'Proxy & Lazy Loading',u:'13_proxy',d:'remote model proxies, lazy tensor loading, test mocks'},
+        {n:'14',t:'Flyweight & Parameter Sharing',u:'14_flyweight',d:'shared embeddings, weight tying, cross-layer sharing'},
+      ]},
+      {name:'Behavioral Patterns',chs:[
+        {n:'15',t:'Strategy Pattern',u:'15_strategy',d:'interchangeable losses, optimizers, samplers, augmentation policies'},
+        {n:'16',t:'Observer, Callback & Event System',u:'16_observer',d:'training callbacks, PyTorch hooks, W&B integration'},
+        {n:'17',t:'Template Method & Training Loop',u:'17_template_method',d:'skeleton algorithms, Lightning’s training_step'},
+        {n:'18',t:'Chain of Responsibility & Transform Pipelines',u:'18_chain',d:'transforms.Compose, middleware stacks, filter pipelines'},
+        {n:'19',t:'Command & Job Scheduler',u:'19_command',d:'experiment queuing, reproducible job dispatch'},
+        {n:'20',t:'State Machine & Lifecycle',u:'20_state',d:'init → training → eval → serving, agent state management'},
+        {n:'21',t:'Iterator, Generator & Lazy Datasets',u:'21_iterator',d:'DataLoader internals, IterableDataset, WebDataset'},
+        {n:'22',t:'Visitor & Graph Traversal',u:'22_visitor',d:'FLOPs counting, ONNX export, pruning masks, .apply()'},
+      ]},
+      {name:'PyTorch Design Patterns',chs:[
+        {n:'23',t:'nn.Module Composition Patterns',u:'23_module_composition',d:'Sequential, ModuleList, ModuleDict, skip connections'},
+        {n:'24',t:'Hook Pattern',u:'24_hooks',d:'forward/backward hooks, activation extraction, Grad-CAM internals'},
+        {n:'25',t:'Custom Training Components',u:'25_custom_components',d:'custom losses, optimizers, schedulers, samplers, collate fns'},
+        {n:'26',t:'Checkpoint & Serialization',u:'26_checkpoint',d:'state_dict, safetensors, resumable & distributed checkpointing'},
+        {n:'27',t:'Distributed & Parallel Patterns',u:'27_distributed',d:'DDP, FSDP, pipeline & tensor parallelism, ZeRO stages'},
+      ]},
+      {name:'ML Pipeline & MLOps Patterns',chs:[
+        {n:'28',t:'Data Pipeline & DAG Patterns',u:'28_data_pipeline',d:'Kedro, Airflow, Prefect, Metaflow, lineage, DVC'},
+        {n:'29',t:'Configuration Management Pattern',u:'29_configuration',d:'Hydra, OmegaConf, structured configs, feature flags'},
+        {n:'30',t:'Experiment Tracking & Reproducibility',u:'30_experiment_tracking',d:'MLflow, W&B, artifact versioning, determinism'},
+        {n:'31',t:'Model Serving Patterns',u:'31_serving',d:'REST/gRPC, shadow deployment, A/B testing, canary releases'},
+        {n:'32',t:'Resilience Patterns for ML',u:'32_resilience',d:'circuit breaker, bulkhead, retry with backoff, fallback models'},
+      ]},
+      {name:'Agentic & LLM Design Patterns',chs:[
+        {n:'33',t:'ReAct & Chain-of-Thought',u:'33_react',d:'observe-think-act, scratchpad reasoning, self-correction'},
+        {n:'34',t:'Router & Dispatcher Pattern',u:'34_router',d:'LLM routing, multi-model switching, intent classification'},
+        {n:'35',t:'Orchestrator-Worker Pattern',u:'35_orchestrator_worker',d:'task delegation, parallel sub-agents, result aggregation'},
+        {n:'36',t:'Evaluator-Optimizer Pattern',u:'36_evaluator_optimizer',d:'self-reflection loops, auto-refinement, process reward models'},
+        {n:'37',t:'RAG & Retrieval Patterns',u:'37_rag',d:'dense/hybrid retrieval, reranking, context compression, self-RAG'},
+        {n:'38',t:'Multi-Agent Communication',u:'38_multi_agent',d:'message passing, blackboard, publish-subscribe, agent handoffs'},
+        {n:'39',t:'Memory & Context Management',u:'39_memory',d:'episodic & semantic memory, KV-cache eviction strategies'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'Pattern Quick Reference',u:'appendix_a_quick_reference',d:'all 39 patterns on one page — intent, participants, use case'},
+        {n:'B',t:'Anti-Patterns in ML',u:'appendix_b_antipatterns',d:'god module, spaghetti training loop, data leakage — and the refactor'},
+        {n:'C',t:'Glossary',u:'appendix_c_glossary',d:'every pattern term from Abstract Factory to ZeRO'},
+      ]},
+    ]
+  },
+  {
+    id:'pytorch-essentials', label:'PyTorch Essentials', color:'periwinkle', status:'live',
+    blurb:'Tensors to multi-GPU — code-first PyTorch, minimal prose',
+    url:'https://karam-nus.github.io/pytorch-essentials/',
+    base:'https://karam-nus.github.io/pytorch-essentials/',
+    groups:[
+      {name:'Foundations',chs:[
+        {n:'01',t:'Tensors',u:'01_tensors',d:'dtypes, views vs copies, memory layout, strides, broadcasting'},
+        {n:'02',t:'Autograd',u:'02_autograd',d:'the graph, .backward(), custom autograd functions, checkpointing'},
+        {n:'03',t:'nn.Module & Building Blocks',u:'03_nn_module',d:'module anatomy, parameter registration, hooks, state_dict'},
+        {n:'04',t:'Data Loading & Preprocessing',u:'04_data_loading',d:'Dataset, DataLoader, samplers, prefetching, streaming'},
+        {n:'05',t:'Training Loop Anatomy',u:'05_training_loop',d:'the canonical loop, clipping, accumulation, early stopping'},
+        {n:'06',t:'Optimizers & Schedulers',u:'06_optimizers_schedulers',d:'SGD, Adam, AdamW, LAMB, warmup, cosine decay'},
+        {n:'07',t:'Loss Functions',u:'07_loss_functions',d:'cross-entropy, focal, contrastive, numerical stability'},
+      ]},
+      {name:'Architecture Patterns',chs:[
+        {n:'08',t:'CNNs in PyTorch',u:'08_cnns',d:'Conv2d internals, receptive fields, residual blocks'},
+        {n:'09',t:'RNNs, LSTMs & Sequence Models',u:'09_rnns_lstms',d:'packed sequences, bidirectional, when to use vs transformers'},
+        {n:'10',t:'Transformers from Scratch',u:'10_transformers',d:'self-attention, multi-head, nn.Transformer vs custom'},
+        {n:'11',t:'Transfer Learning & Pretrained Models',u:'11_transfer_learning',d:'feature extraction, freezing layers, domain adaptation'},
+      ]},
+      {name:'Performance & Optimization',chs:[
+        {n:'12',t:'Mixed Precision & AMP',u:'12_mixed_precision',d:'torch.amp, GradScaler, BF16 vs FP16, loss scaling'},
+        {n:'13',t:'Memory Management & Profiling',u:'13_memory_profiling',d:'the profiler, bottleneck analysis, activation checkpointing'},
+        {n:'14',t:'Custom CUDA Extensions',u:'14_cuda_extensions',d:'C++/CUDA extensions, Triton kernels, fused operations'},
+        {n:'15',t:'TorchScript & torch.compile',u:'15_torch_compile',d:'tracing vs scripting, graph breaks, dynamic shapes, AOTAutograd'},
+      ]},
+      {name:'Scaling',chs:[
+        {n:'16',t:'Multi-GPU Training & Inference',u:'16_multi_gpu',d:'DDP, FSDP, tensor/pipeline parallelism, DeepSpeed, multi-node'},
+      ]},
+      {name:'Engineering',chs:[
+        {n:'17',t:'Debugging & Reproducibility',u:'17_debugging',d:'deterministic mode, anomaly detection, common NaN sources'},
+        {n:'18',t:'Production Deployment',u:'18_deployment',d:'TorchServe, ONNX export, torch.export, mobile/edge'},
+      ]},
+      {name:'Appendices',chs:[
+        {n:'A',t:'PyTorch Internals',u:'appendix_a_internals',d:'dispatcher, TensorImpl, ATen, C10, operator registration'},
+        {n:'B',t:'Common Pitfalls',u:'appendix_b_pitfalls',d:'the 30 most common PyTorch bugs and how to avoid them'},
+      ]},
+    ]
+  },
+  {
+    id:'models', label:'Models', color:'mint', status:'live',
+    blurb:'Architecture deep-dives across model generations and families',
+    url:'https://karam-nus.github.io/models/',
+    base:'https://karam-nus.github.io/models/',
+    groups:[
+      {name:'Model Families',chs:[
+        {n:'01',t:'Qwen',u:'01_Qwen',d:'v1 → 1.5 → 2 → 2.5 → 3'},
+        {n:'02',t:'Llama',u:'02_Llama',d:'v1 → 2 → 3 → 3.1 → 3.2 → 3.3 → 4'},
+        {n:'03',t:'DeepSeek',u:null,d:'V1 → V2 → V3 → R1 · planned'},
+        {n:'04',t:'Gemma',u:'04_Gemma',d:'v1 → 2 → 3 → 4'},
+        {n:'05',t:'Mistral',u:null,d:'7B → Mixtral → Large · planned'},
+        {n:'06',t:'Phi',u:null,d:'v1 → 1.5 → 2 → 3 → 4 · planned'},
+        {n:'07',t:'Alpamayo',u:'07_Alpamayo',d:'R1 → 1.5 (VLA)'},
+      ]},
+    ]
+  },
+  {
+    id:'code', label:'Code', color:'ink', status:'live',
+    blurb:'Package-by-package ML coding reference — copy-paste-ready patterns',
+    url:'https://karam-nus.github.io/code/',
+    base:'https://karam-nus.github.io/code/',
+    groups:[
+      {name:'Data & Visualization',chs:[
+        {n:'01',t:'NumPy',u:'01_numpy',d:'array ops, broadcasting, indexing, memory layout, linear algebra'},
+        {n:'02',t:'OpenCV',u:'02_opencv',d:'image I/O, color spaces, transforms, video, contours, DNN module'},
+        {n:'03',t:'Matplotlib',u:'03_matplotlib',d:'figures, subplots, image display, annotations, styling'},
+        {n:'04',t:'tqdm',u:'04_tqdm',d:'progress bars, nested loops, pandas integration'},
+      ]},
+      {name:'Training & Models',chs:[
+        {n:'05',t:'TorchVision',u:'05_torchvision',d:'transforms v2, datasets, pretrained models, detection'},
+        {n:'06',t:'TorchAO',u:'06_torchao',d:'quantization, sparsity, int8/int4, autoquant, kernel fusion'},
+        {n:'07',t:'TorchMetrics',u:'07_torchmetrics',d:'classification, detection, segmentation metrics, DDP'},
+      ]},
+      {name:'Experiment Tracking',chs:[
+        {n:'08',t:'Weights & Biases',u:'08_wandb',d:'logging, sweeps, artifacts, tables, model registry, reports'},
+        {n:'09',t:'MLflow',u:'09_mlflow',d:'tracking, model registry, serving, projects, recipes'},
+      ]},
+      {name:'Detection & Deployment',chs:[
+        {n:'10',t:'Ultralytics',u:'10_ultralytics',d:'YOLOv8/11 — train, val, predict, export, track, pose'},
+        {n:'11',t:'TensorRT',u:'11_tensorrt',d:'ONNX conversion, engine building, INT8 calibration, dynamic shapes'},
+      ]},
+    ]
+  },
+  {
+    id:'metrics', label:'Metrics', color:'sky', status:'live',
+    blurb:'Pick the right metric, know where it breaks',
+    url:'https://karam-nus.github.io/metrics/',
+    base:'https://karam-nus.github.io/metrics/',
+    pillGroups:[
+      {name:'Tensor Comparison & Numerical Debugging',pills:['Cosine Similarity','RMSE','RRMSE','MAE','torch.allclose','SNR','SQNR','KL Divergence','L1/L2 Norm Diff','Max Absolute Error','Pearson/Spearman']},
+      {name:'General Regression',pills:['MSE','RMSE','MAE','MAPE','R²','Huber Loss','SMAPE']},
+      {name:'Classification',pills:['Accuracy','Precision','Recall','F1','ROC-AUC','PR-AUC','MCC','Cohen’s Kappa','Specificity','Top-K Accuracy']},
+      {name:'Object Detection',pills:['mAP','Average Recall','IoU','GIoU','DIoU','CIoU']},
+      {name:'Segmentation',pills:['Dice','IoU (Jaccard)','Pixel Accuracy','Boundary F1']},
+      {name:'Generative & Distribution Quality',pills:['FID','Inception Score','LPIPS','SSIM','PSNR','BLEU','ROUGE','METEOR','CIDEr','BERTScore']},
+      {name:'Ranking & Retrieval',pills:['NDCG','MRR','Precision@K','Recall@K','MAP@K']},
+      {name:'Calibration & Uncertainty',pills:['ECE','MCE','Brier Score','NLL','Reliability Diagrams']},
+    ]
+  },
+  {
+    id:'evals', label:'Evals', color:'peach', status:'live',
+    blurb:'The math, datasets and caveats behind every major LLM/VLM benchmark',
+    url:'https://karam-nus.github.io/evals/',
+    base:'https://karam-nus.github.io/evals/',
+    groups:[
+      {name:'',chs:[
+        {n:'01',t:'Wikitext Perplexity',u:'01_wikitext_perplexity',d:'language modelling quality, training progress, regression detection'},
+        {n:'02',t:'MMLU',u:'02_mmlu',d:'broad academic knowledge across 57 subjects'},
+        {n:'03',t:'MMMU',u:'03_mmmu',d:'college-level multimodal understanding across 30 subjects'},
+        {n:'04',t:'RealWorldQA',u:'04_realworldqa',d:'real-world spatial and visual understanding from photos'},
+      ]},
+    ]
+  },
+
+  /* ── in progress: README stub only, no published site ── */
+  { id:'quantization',       label:'Quantization',        status:'wip', blurb:'PTQ, QAT and the full quantization landscape' },
+  { id:'model-optimization', label:'Model Optimization',  status:'wip', blurb:'Quantization, sparsity, pruning, NAS, distillation' },
+  { id:'training',           label:'Training',            status:'wip', blurb:'Training pipelines, recipes and scaling' },
+  { id:'machine-learning',   label:'Machine Learning',    status:'wip', blurb:'Classical ML foundations before the deep end' },
+  { id:'huggingface',        label:'HuggingFace',         status:'wip', blurb:'The Hub, Transformers, Datasets and the HF toolchain' },
+  { id:'jax-essentials',     label:'JAX Essentials',      status:'wip', blurb:'JAX, XLA and functional numerical computing' },
+  { id:'networking',         label:'Networking',          status:'wip', blurb:'Static IPs, multi-GPU fabrics, DGX Spark QSFP setup' },
+  { id:'vectorization',      label:'Vectorization',       status:'wip', blurb:'SIMD, batching and vectorized numerical code' },
+  { id:'programming',        label:'Programming',         status:'wip', blurb:'Metaprogramming and dynamic programming' },
+  { id:'setup',              label:'Setup',               status:'wip', blurb:'Reproducible macOS and Ubuntu machine setup — scripts and guides' },
 ];
 
-/* ── build tab strip ── */
-const seg = document.getElementById('seg');
-repos.forEach((r,i) => {
-  const btn = document.createElement('button');
-  btn.className = 'seg-item' + (i===0?' active':'');
-  btn.textContent = r.label;
-  btn.dataset.id = r.id;
-  btn.addEventListener('click', () => activate(r.id));
-  seg.appendChild(btn);
+/* ═══════════════════════════════════════════════════════════════════════
+   RENDER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const live = repos.filter(r => r.status === 'live');
+const wip  = repos.filter(r => r.status === 'wip');
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* The scope badge is derived from the data so it can never drift. */
+const chapterCount = r =>
+  r.pillGroups ? r.pillGroups.reduce((n, g) => n + g.pills.length, 0)
+               : r.groups.reduce((n, g) => n + g.chs.length, 0);
+
+const scopeOf = r => chapterCount(r) + (r.pillGroups ? ' metrics' : ' chapters');
+
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+/* ── live cards ── */
+const gridLive = document.getElementById('grid-live');
+
+live.forEach(r => {
+  const card = el('article', 'card');
+  card.id = 'card-' + r.id;
+  card.dataset.id = r.id;
+  card.style.setProperty('--card-bg', 'var(--c-' + r.color + ')');
+  card.style.setProperty('--card-fg', 'var(--t-' + r.color + ')');
+  if (r.color === 'ink') card.style.setProperty('--card-border', 'var(--ink-border)');
+
+  const toggle = el('button', 'card-toggle');
+  toggle.type = 'button';
+  toggle.id = 'toggle-' + r.id;
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', 'panel-' + r.id);
+  toggle.appendChild(el('span', 'sr-only', 'Show the chapter index for ' + r.label));
+  card.appendChild(toggle);
+
+  const sign = el('span', 'card-sign', '+');
+  sign.setAttribute('aria-hidden', 'true');
+  card.appendChild(sign);
+
+  const body = el('div', 'card-body');
+  body.appendChild(el('h3', 'card-title', r.label));
+  body.appendChild(el('p', 'card-desc', r.blurb));
+  card.appendChild(body);
+
+  const foot = el('div', 'card-foot');
+  foot.appendChild(el('span', 'card-badge', scopeOf(r)));
+  const arrow = el('a', 'card-arrow', '→');
+  arrow.href = r.url;
+  arrow.target = '_blank';
+  arrow.rel = 'noopener';
+  arrow.setAttribute('aria-label', 'Open the ' + r.label + ' site in a new tab');
+  arrow.addEventListener('click', e => e.stopPropagation());
+  foot.appendChild(arrow);
+  card.appendChild(foot);
+
+  toggle.addEventListener('click', () => toggleRepo(r.id));
+  gridLive.appendChild(card);
 });
-const track = document.createElement('div');
-track.className = 'seg-track';
-seg.appendChild(track);
 
-/* ── build content panels ── */
-const contentEl = document.getElementById('content');
-repos.forEach((r,i) => {
-  const div = document.createElement('div');
-  div.className = 'content' + (i===0?' active':'');
-  div.id = 'panel-'+r.id;
+/* ── work-in-progress cards: inert, not focusable, not linked ── */
+const gridWip = document.getElementById('grid-wip');
 
-  // meta bar
-  const meta = document.createElement('div');
-  meta.className = 'repo-meta';
-  const a = document.createElement('a');
-  a.className = 'repo-link';
-  a.href = r.url; a.target='_blank'; a.rel='noopener';
-  a.textContent = r.label + ' \u2197';
-  const cnt = document.createElement('span');
-  cnt.className = 'repo-count';
-  cnt.textContent = r.count;
-  meta.appendChild(a); meta.appendChild(cnt);
-  div.appendChild(meta);
+wip.forEach(r => {
+  const card = el('article', 'card-wip');
+  card.setAttribute('aria-disabled', 'true');
+  const body = el('div', 'card-body');
+  body.appendChild(el('h3', 'card-title', r.label));
+  body.appendChild(el('p', 'card-desc', r.blurb));
+  card.appendChild(body);
+  gridWip.appendChild(card);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EXPANSION PANEL — one open at a time, inserted after the clicked
+   card's grid row so it never lands mid-row at any breakpoint.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+let openId = null;
+let openPanel = null;
+
+function buildPanel(r) {
+  const panel = el('section', 'panel');
+  panel.id = 'panel-' + r.id;
+  panel.setAttribute('aria-labelledby', 'panel-' + r.id + '-title');
+  /* --card-bg draws the border in the card's true colour; --panel-tint fills
+     the surface. They differ only for ink, which is too dark to tint with. */
+  panel.style.setProperty('--card-bg', 'var(--c-' + r.color + ')');
+  panel.style.setProperty('--panel-tint',
+    r.color === 'ink' ? 'var(--c-ink-panel)' : 'var(--c-' + r.color + ')');
+
+  const inner = el('div', 'panel-inner');
+
+  const head = el('header', 'panel-head');
+  const titles = el('div', 'panel-titles');
+  const h = el('h3', 'panel-title', r.label);
+  h.id = 'panel-' + r.id + '-title';
+  titles.appendChild(h);
+  titles.appendChild(el('span', 'panel-badge', scopeOf(r)));
+  head.appendChild(titles);
+
+  const actions = el('div', 'panel-actions');
+  const open = el('a', 'panel-open', 'Open full site ↗');
+  open.href = r.url; open.target = '_blank'; open.rel = 'noopener';
+  actions.appendChild(open);
+  const close = el('button', 'panel-close', '×');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close the ' + r.label + ' chapter index');
+  close.addEventListener('click', () => closePanel(true));
+  actions.appendChild(close);
+  head.appendChild(actions);
+  inner.appendChild(head);
+
+  const bodyEl = el('div', 'panel-body');
 
   if (r.pillGroups) {
     r.pillGroups.forEach(g => {
-      const pg = document.createElement('div');
-      pg.className = 'pill-group';
-      const lbl = document.createElement('div');
-      lbl.className = 'pill-group-label';
-      lbl.textContent = g.name;
-      pg.appendChild(lbl);
-      const pills = document.createElement('div');
-      pills.className = 'pills';
-      g.pills.forEach(p => {
-        const pill = document.createElement('span');
-        pill.className = 'pill';
-        pill.textContent = p;
-        pills.appendChild(pill);
-      });
-      pg.appendChild(pills);
-      div.appendChild(pg);
+      const grp = el('div', 'group');
+      grp.appendChild(el('div', 'group-label', g.name));
+      const pills = el('div', 'pills');
+      g.pills.forEach(p => pills.appendChild(el('span', 'pill', p)));
+      grp.appendChild(pills);
+      bodyEl.appendChild(grp);
     });
   } else {
     r.groups.forEach(g => {
-      const grpDiv = document.createElement('div');
-      grpDiv.className = 'group';
-      if (g.name) {
-        const lbl = document.createElement('div');
-        lbl.className = 'group-label';
-        lbl.textContent = g.name;
-        grpDiv.appendChild(lbl);
-      }
+      const grp = el('div', 'group');
+      if (g.name) grp.appendChild(el('div', 'group-label', g.name));
       g.chs.forEach(ch => {
-        const row = document.createElement('div');
-        row.className = 'ch';
-        const num = document.createElement('span');
-        num.className = 'ch-num';
-        num.textContent = ch.n;
-        row.appendChild(num);
+        const row = el('div', 'ch');
+        row.appendChild(el('span', 'ch-num', ch.n));
         if (ch.u) {
-          const lnk = document.createElement('a');
-          lnk.className = 'ch-link';
-          lnk.href = r.base + ch.u;
-          lnk.target = '_blank'; lnk.rel = 'noopener';
-          lnk.textContent = ch.t;
-          row.appendChild(lnk);
+          const a = el('a', 'ch-link', ch.t);
+          a.href = r.base + ch.u;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          row.appendChild(a);
         } else {
-          const span = document.createElement('span');
-          span.className = 'ch-link planned';
-          span.textContent = ch.t;
-          row.appendChild(span);
+          row.appendChild(el('span', 'ch-link planned', ch.t));
         }
-        if (ch.d) {
-          const desc = document.createElement('span');
-          desc.className = 'ch-desc';
-          desc.textContent = '\u00b7 ' + ch.d;
-          row.appendChild(desc);
-        }
-        grpDiv.appendChild(row);
+        if (ch.d) row.appendChild(el('span', 'ch-desc', '· ' + ch.d));
+        if (!ch.u) row.appendChild(el('span', 'ch-planned-mark', 'planned'));
+        grp.appendChild(row);
       });
-      div.appendChild(grpDiv);
+      bodyEl.appendChild(grp);
     });
   }
-  contentEl.appendChild(div);
+
+  inner.appendChild(bodyEl);
+  panel.appendChild(inner);
+  return panel;
+}
+
+/* The last card of the row that contains `card`. Derived from the live
+   column count so it stays correct at 4, 3, 2 and 1 columns. */
+function rowEndCard(card) {
+  const cards = Array.from(gridLive.querySelectorAll(':scope > .card'));
+  const cols = getComputedStyle(gridLive).gridTemplateColumns.split(' ').filter(Boolean).length;
+  const idx = cards.indexOf(card);
+  if (idx < 0 || cols < 1) return card;
+  const end = Math.min((Math.floor(idx / cols) + 1) * cols - 1, cards.length - 1);
+  return cards[end];
+}
+
+function placePanel(panel, card) {
+  const anchor = rowEndCard(card);
+  if (panel.previousElementSibling !== anchor) {
+    gridLive.insertBefore(panel, anchor.nextSibling);
+  }
+}
+
+/* `immediate` skips the close animation — used when another card is being
+   opened, so two panels are never in the grid at the same time. */
+function closePanel(returnFocus, immediate) {
+  if (!openPanel) return;
+  const id = openId;
+  const card = document.getElementById('card-' + id);
+  const toggle = document.getElementById('toggle-' + id);
+  const panel = openPanel;
+
+  openId = null;
+  openPanel = null;
+
+  if (card) card.classList.remove('is-open');
+  gridLive.classList.remove('has-open');
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  const sign = card && card.querySelector('.card-sign');
+  if (sign) sign.textContent = '+';
+
+  if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+
+  if (immediate || reduceMotion.matches) {
+    panel.remove();
+  } else {
+    panel.classList.remove('is-static');
+    panel.style.height = panel.scrollHeight + 'px';
+    void panel.offsetHeight;          /* force a reflow so the transition runs */
+    panel.style.height = '0px';
+    panel.addEventListener('transitionend', function done(e) {
+      if (e.propertyName !== 'height') return;
+      panel.removeEventListener('transitionend', done);
+      panel.remove();
+    });
+  }
+
+  if (returnFocus && toggle) toggle.focus();
+}
+
+function openRepo(id, scroll) {
+  const r = live.find(x => x.id === id);
+  if (!r) return;
+  if (openId) closePanel(false, true);
+
+  const card = document.getElementById('card-' + id);
+  const toggle = document.getElementById('toggle-' + id);
+  const panel = buildPanel(r);
+
+  openId = id;
+  openPanel = panel;
+  placePanel(panel, card);
+
+  card.classList.add('is-open');
+  gridLive.classList.add('has-open');
+  toggle.setAttribute('aria-expanded', 'true');
+  const sign = card.querySelector('.card-sign');
+  if (sign) sign.textContent = '−';
+
+  if (history.replaceState) history.replaceState(null, '', '#' + id);
+
+  if (reduceMotion.matches) {
+    panel.classList.add('is-static');
+  } else {
+    /* resolve the panel's style at height:0 first, or the browser may skip
+       straight to the target height with no transition */
+    const target = panel.scrollHeight;
+    void panel.offsetHeight;
+    panel.style.height = target + 'px';
+    panel.addEventListener('transitionend', function done(e) {
+      if (e.propertyName !== 'height') return;
+      panel.removeEventListener('transitionend', done);
+      panel.classList.add('is-static');
+      panel.style.height = '';
+    });
+  }
+
+  if (scroll !== false) {
+    panel.scrollIntoView({ block: 'nearest', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  }
+}
+
+function toggleRepo(id) {
+  if (openId === id) closePanel(true);
+  else openRepo(id, true);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && openId) closePanel(true);
 });
 
-/* ── tab switching ── */
-function moveTrack() {
-  const active = seg.querySelector('.seg-item.active');
-  if (!active) return;
-  track.style.left  = active.offsetLeft + 'px';
-  track.style.width = active.offsetWidth + 'px';
+/* Column count changes on resize, so the panel's row anchor moves with it. */
+let resizeTimer;
+window.addEventListener('resize', () => {
+  if (!openPanel) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (openPanel && openId) placePanel(openPanel, document.getElementById('card-' + openId));
+  }, 120);
+});
+
+/* A panel is linkable: #vision opens the Vision index on load. */
+function openFromHash() {
+  const id = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (id && live.some(r => r.id === id) && id !== openId) openRepo(id, true);
 }
-function activate(id) {
-  seg.querySelectorAll('.seg-item').forEach(b =>
-    b.classList.toggle('active', b.dataset.id === id)
-  );
-  document.querySelectorAll('.content').forEach(c =>
-    c.classList.toggle('active', c.id === 'panel-'+id)
-  );
-  moveTrack();
-  seg.querySelector('.seg-item.active')
-     ?.scrollIntoView({block:'nearest', inline:'nearest'});
-}
-window.addEventListener('load',   () => setTimeout(moveTrack, 40));
-window.addEventListener('resize', moveTrack);
+window.addEventListener('hashchange', openFromHash);
+openFromHash();
+
+/* ── hero entrance: once, on load, never on scroll ── */
+requestAnimationFrame(() => {
+  document.querySelectorAll('.rise').forEach((n, i) => {
+    n.style.transitionDelay = (i * 70) + 'ms';
+    n.classList.add('in');
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DOTTED GRID — parallax on scroll, spotlight under the pointer.
+   Both are event-driven and rAF-coalesced; nothing runs while idle.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  const dots = document.getElementById('dots');
+  if (!dots || reduceMotion.matches) return;
+
+  let sy = 0, mx = 0, my = 0, spot = 0, queued = false;
+
+  function paint() {
+    queued = false;
+    /* the grid slides at a fraction of scroll speed, wrapped to the 24px
+       tile so the offset can never grow unbounded on a long page */
+    dots.style.setProperty('--par', (-sy * 0.15) % 24 + 'px');
+    dots.style.setProperty('--mx', mx + 'px');
+    dots.style.setProperty('--my', my + 'px');
+    dots.style.setProperty('--spot', spot);
+  }
+  function schedule() {
+    if (!queued) { queued = true; requestAnimationFrame(paint); }
+  }
+
+  window.addEventListener('scroll', () => { sy = window.scrollY; schedule(); }, { passive: true });
+
+  /* Spotlight needs a real hovering pointer and mask support. Skip it on
+     touch, where there is no cursor to follow. */
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const canMask = CSS.supports('mask-image', 'radial-gradient(#000,#000)') ||
+                  CSS.supports('-webkit-mask-image', 'radial-gradient(#000,#000)');
+
+  if (fine.matches && canMask) {
+    window.addEventListener('pointermove', e => {
+      if (e.pointerType !== 'mouse') return;
+      mx = e.clientX; my = e.clientY; spot = 1; schedule();
+    }, { passive: true });
+    document.addEventListener('pointerleave', () => { spot = 0; schedule(); });
+    window.addEventListener('blur', () => { spot = 0; schedule(); });
+  }
+
+  sy = window.scrollY;
+  paint();
+}());
 
 /* ── theme toggle ── */
 (function () {
   const input = document.getElementById('theme-toggle-input');
-  const html  = document.documentElement;
-  function applyTheme(theme) {
-    if (theme === 'light') {
-      html.dataset.theme = 'light';
-      input.checked = true;
-    } else {
-      delete html.dataset.theme;
-      input.checked = false;
-    }
+  const html = document.documentElement;
+  function apply(theme) {
+    if (theme === 'dark') html.dataset.theme = 'dark';
+    else delete html.dataset.theme;
+    input.checked = (theme === 'dark');
   }
-  applyTheme(localStorage.getItem('theme') || 'dark');
+  let stored = null;
+  try { stored = localStorage.getItem('theme'); } catch (e) { /* no-op */ }
+  apply(stored === 'dark' ? 'dark' : 'light');
   input.addEventListener('change', function () {
-    const next = this.checked ? 'light' : 'dark';
-    localStorage.setItem('theme', next);
-    applyTheme(next);
-  });
-}());
-</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
-<script>
-/* ── emergent particle background (adapted from ai-timeline.org) ── */
-(function () {
-  var canvas = document.getElementById('bg-canvas');
-  if (!canvas || typeof THREE === 'undefined') return;
-
-  var W = window.innerWidth, H = window.innerHeight;
-  var scene    = new THREE.Scene();
-  var camera   = new THREE.PerspectiveCamera(75, W / H, 0.1, 2000);
-  var renderer;
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-  } catch (e) {
-    return; /* WebGL unavailable */
-  }
-  renderer.setClearColor(0x000000, 0); /* transparent background */
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  /* Keep in sync with CSS @media (max-width: 640px). Particle count is fixed at
-     init time; a resize across this threshold won't change density, but that
-     edge case is acceptable without a full scene reinit. */
-  var MOBILE_BREAKPOINT     = 640;
-  var RESIZE_DEBOUNCE_MS    = 150;
-  var isMobile = W < MOBILE_BREAKPOINT;
-  var CFG = {
-    layers:            5,
-    particlesPerLayer: isMobile ? 350 : 700,
-    /* particle colors are WebGL linear-color values for the additive-blending
-       glow effect; they intentionally differ from the CSS palette */
-    baseColor:         new THREE.Color(0.2, 0.3, 0.8),
-    baseSize:          isMobile ? 1.2 : 1.5,
-    baseOpacity:       0.4,
-    rotationSpeed:     0.05,
-    waveSpeed:         0.0008,
-    cameraDistance:    300,
-  };
-
-  var layers = [];
-  for (var li = 0; li < CFG.layers; li++) {
-    (function (layerIndex) {
-      var geo  = new THREE.BufferGeometry();
-      var pos  = new Float32Array(CFG.particlesPerLayer * 3);
-      for (var i = 0; i < CFG.particlesPerLayer * 3; i += 3) {
-        var angle  = (i / 3) * 0.1;
-        var radius = (layerIndex + 1) * 50 + Math.sin(angle) * 20;
-        pos[i]     = Math.cos(angle) * radius;
-        pos[i + 1] = Math.sin(angle) * radius;
-        pos[i + 2] = layerIndex * 20 - 50;
-      }
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-
-      var mat = new THREE.PointsMaterial({
-        size:     CFG.baseSize,
-        color:    new THREE.Color(
-          CFG.baseColor.r + layerIndex * 0.15,
-          CFG.baseColor.g + layerIndex * 0.02,
-          CFG.baseColor.b - layerIndex * 0.15
-        ),
-        transparent: true,
-        opacity:     CFG.baseOpacity - layerIndex * 0.05,
-        blending:    THREE.AdditiveBlending,
-        depthWrite:  false,
-        depthTest:   false,
-      });
-
-      var pts = new THREE.Points(geo, mat);
-      scene.add(pts);
-      layers.push({ pts: pts, geo: geo });
-    })(li);
-  }
-
-  camera.position.z = CFG.cameraDistance;
-  camera.position.y = -50;
-
-  var time    = 0;
-  var targetY = -50;
-
-  window.addEventListener('scroll', function () {
-    var max = document.body.scrollHeight - window.innerHeight;
-    if (max > 0) targetY = -100 + (window.scrollY / max) * 200;
-  }, { passive: true });
-
-  function animate() {
-    requestAnimationFrame(animate);
-    time += CFG.waveSpeed;
-
-    for (var li = 0; li < layers.length; li++) {
-      var layer = layers[li];
-      var pos   = layer.pts.geometry.attributes.position.array;
-      for (var i = 0; i < pos.length; i += 3) {
-        var ang = (i / 3) * 0.1 + time;
-        var r   = (li + 1) * 50 + Math.sin(ang + li) * 15;
-        pos[i]     = Math.cos(ang) * r + Math.sin(time * 1.5 + i) * 3;
-        pos[i + 1] = Math.sin(ang) * r + Math.cos(time * 1.5 + i) * 3;
-        pos[i + 2] += Math.sin(time + i * 0.01) * 0.1;
-      }
-      layer.pts.geometry.attributes.position.needsUpdate = true;
-      layer.pts.rotation.z = time * CFG.rotationSpeed;
-    }
-
-    camera.position.x += (Math.sin(time * 0.5) * 30 - camera.position.x) * 0.05;
-    camera.position.y += (targetY - camera.position.y) * 0.15;
-    camera.lookAt(0, 0, 0);
-    renderer.render(scene, camera);
-  }
-
-  animate();
-
-  var resizeTimer;
-  window.addEventListener('resize', function () {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () {
-      W = window.innerWidth; H = window.innerHeight;
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-      renderer.setSize(W, H);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    }, RESIZE_DEBOUNCE_MS);
+    const next = this.checked ? 'dark' : 'light';
+    try { localStorage.setItem('theme', next); } catch (e) { /* no-op */ }
+    apply(next);
   });
 }());
 </script>
