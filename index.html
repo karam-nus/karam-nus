@@ -10,9 +10,28 @@
 <script>
   try {
     var t = localStorage.getItem('theme');
-    if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+    if (t === 'dark' || t === 'sepia') document.documentElement.dataset.theme = t;
   } catch (e) { /* localStorage unavailable (private mode) — default to light */ }
+
+  /* Arm the brand intro here, before <body> is parsed, so the animation's
+     opening frame is the first thing painted — no flash of the settled state.
+     The class gates every intro rule, so without JS (or with reduced motion)
+     the top bar simply renders static. */
+  try {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+      document.documentElement.classList.add('brand-intro');
+  } catch (e) { /* no-op */ }
 </script>
+
+<!-- Tab icon: the bare signature mark on a transparent ground. A disc would
+     leave the square's four corners transparent, which browsers paint white —
+     hence a white box around the circle. With no background at all there is
+     nothing to box it. The embedded @media flips the stroke so the glyph stays
+     visible on both light and dark browser chrome. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cstyle%3Epath%7Bstroke:%230E0E0E%7D@media(prefers-color-scheme:dark)%7Bpath%7Bstroke:%23F5F5F5%7D%7D%3C/style%3E%3Cpath d='M33 5Q30 31.5 15.7 54Q40.7 43.7 58.2 23Q32 17 6.3 25Q29.7 35.2 45.8 55' fill='none' stroke-width='6.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<!-- Home-screen icon does need a solid ground; iOS applies its own mask, so
+     the square is full-bleed rather than pre-rounded. -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230E0E0E'/%3E%3Cpath d='M33 5Q30 31.5 15.7 54Q40.7 43.7 58.2 23Q32 17 6.3 25Q29.7 35.2 45.8 55' fill='none' stroke='%23FAF8F5' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round' transform='translate(32 32) scale(.8) translate(-32 -32)'/%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,13 +64,16 @@
 
   /* ── card palette (identical in both themes, by design) ── */
   --c-mint:#C3E8C9;        --t-mint:#0F1A11;
+  --c-teal:#A8DED2;        --t-teal:#06201A;
   --c-sky:#B8E4F0;         --t-sky:#0C1A1F;
-  --c-ink:#0E0E0E;         --t-ink:#F5F5F5;
-  --c-peach:#F6CFB2;       --t-peach:#20140A;
-  --c-salmon:#F3BCAF;      --t-salmon:#21100C;
-  --c-sand:#EDD9AE;        --t-sand:#1E1808;
-  --c-pink:#F6BFE9;        --t-pink:#20101C;
   --c-periwinkle:#C9C6F9;  --t-periwinkle:#12102A;
+  --c-pink:#F6BFE9;        --t-pink:#20101C;
+  --c-salmon:#F3BCAF;      --t-salmon:#21100C;
+  --c-peach:#F6CFB2;       --t-peach:#20140A;
+  --c-sand:#EDD9AE;        --t-sand:#1E1808;
+  --c-butter:#F0E5A6;      --t-butter:#1E1A04;
+  /* the single near-black anchor card */
+  --c-ink:#0E0E0E;         --t-ink:#F5F5F5;
 
   --ink-border: transparent;
 
@@ -71,7 +93,35 @@
   --dot:    #CBC3B4;
   --dot-hi: #948A79;
 
+  /* scrim over the floral art behind the About copy */
+  --about-bg:     rgba(241,238,232,.76);
+  --about-border: rgba(14,14,14,.09);
+  --about-art:    1;
+
   --ease: cubic-bezier(.4,0,.2,1);
+}
+
+/* ── sepia: warm golden paper. Card colours are unchanged, as in dark.
+      Every token is pulled toward yellow, including the dots and the About
+      glass, so nothing reads as a grey patch sitting on warm stock. ── */
+html[data-theme="sepia"] {
+  --bg:      #F9EBBE;
+  --surface: #F9EBBE;
+  --text:    #33281A;
+  --text-2:  #67552F;
+  --text-3:  #655336;    /* AA 4.64:1 against the darkest panel surface */
+  --rule:    #E6D296;
+  --focus:   #33281A;
+  --bar-bg:  rgba(249,235,190,.8);
+
+  --dot:    #DCC183;
+  --dot-hi: #AE9048;
+
+  --about-bg:     rgba(252,242,206,.76);
+  --about-border: rgba(51,40,26,.11);
+  --about-art:    1;
+
+  --c-ink-panel: #A2998A;
 }
 
 html[data-theme="dark"] {
@@ -97,6 +147,10 @@ html[data-theme="dark"] {
 
   --dot:    #2E2E38;
   --dot-hi: #55555F;
+
+  --about-bg:     rgba(26,26,31,.72);
+  --about-border: rgba(255,255,255,.10);
+  --about-art:    .34;   /* the bloom is a hint on a dark page, not a picture */
 }
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -108,7 +162,10 @@ body {
   font-size: 16px;
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;          /* excludes mobile browser chrome */
+  overflow-x: hidden;          /* belt-and-braces against a stray wide child */
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ══════════════════════════════════════ dotted paper grid ═══════════
@@ -159,7 +216,13 @@ body {
 /* content sits above the grid */
 main, footer.wrap { position: relative; z-index: 1; }
 
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+/* Side padding respects the notch/rounded corners in landscape on iPhone. */
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left:  max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+}
 
 .sr-only {
   position:absolute; width:1px; height:1px; padding:0; margin:-1px;
@@ -185,11 +248,56 @@ main, footer.wrap { position: relative; z-index: 1; }
 .topbar-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 12px max(24px, env(safe-area-inset-right)) 12px max(24px, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;             /* the link/theme group drops to its own line */
+  gap: 10px 16px;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-mark {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--text);
+  display: grid;
+  place-items: center;
+}
+.brand-mark svg { width: 19px; height: 19px; display: block; }
+.brand-mark path { stroke: var(--bg); }
+
+/* ── brand intro ──
+   The mark rolls in from the right end of the name and comes to rest at the
+   left, unrolling the name behind it. --brand-spin is not a round number: the
+   script derives it from the travel distance and the mark's radius, so the
+   glyph turns exactly as far as a wheel of that size would over that distance.
+   Defaults here are sized for "Karamjot Singh" in case the script is late. */
+.brand { --brand-travel: 122px; --brand-spin: 499deg; }
+
+@keyframes brand-roll {
+  from { transform: translateX(var(--brand-travel)) rotate(var(--brand-spin)); }
+  to   { transform: translateX(0) rotate(0deg); }
+}
+@keyframes brand-unroll {
+  from { clip-path: inset(0 100% 0 0); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0);    opacity: 1; }
+}
+@keyframes brand-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.brand-intro .brand-mark {
+  animation: brand-roll 950ms cubic-bezier(.16,1,.3,1) both;
+  will-change: transform;
+}
+.brand-intro .topbar-name {
+  animation: brand-unroll 640ms cubic-bezier(.22,1,.36,1) 300ms both;
+}
+.brand-intro .topbar-right {
+  animation: brand-fade 500ms linear 620ms both;
 }
 .topbar-name {
   font-size: 15px;
@@ -247,9 +355,9 @@ main, footer.wrap { position: relative; z-index: 1; }
 
 .section { padding-bottom: 20px; }
 .section-title {
-  font-size: clamp(32px, 4.4vw, 48px);
+  font-size: clamp(25px, 3vw, 34px);
   font-weight: 600;
-  letter-spacing: -.03em;
+  letter-spacing: -.025em;
   line-height: 1.05;
   color: var(--text);
   margin-bottom: 28px;
@@ -562,8 +670,61 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 
 /* ══════════════════════════════════════ 6. about ════════════════════ */
 
-.about { padding: 64px 0; }
-.about-rule { border: 0; border-top: 1px solid var(--rule); }
+/* Three stacked layers: a soft floral wash, a scrim for legibility, then the
+   copy. The art is built from layered radial gradients rather than a photo —
+   see the note above the ::before rule. */
+.about {
+  position: relative;
+  overflow: hidden;
+  margin: 72px 0;
+  padding: clamp(30px, 4.5vw, 56px);
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--about-border);
+}
+
+/* The floral crop, in CSS.
+   The source photograph is an extreme defocus blur, which is why gradients can
+   stand in for it convincingly: there is no edge detail to lose. Colours and
+   placement are sampled from the image — cream at the left, a white petal top
+   left, apricot through the middle, coral to the right, a rose bloom low
+   centre with a deeper pink core, a red flare bottom left, and a single green
+   stem note bottom right.
+
+   TO USE THE REAL PHOTOGRAPH: save the crop as assets/about.jpg and replace
+   this whole background-image with
+       background-image: url('assets/about.jpg');
+       background-size: cover;
+       background-position: center;
+   Nothing else needs to change — the scrim and contrast maths still hold. */
+.about::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: var(--about-art);
+  background-color: #F0E8DA;
+  background-image:
+    radial-gradient(26% 20% at 43% 71%, #E8577A 0%, rgba(232, 87,122,0) 76%),
+    radial-gradient(34% 27% at 15% 86%, #EC6A50 0%, rgba(236,106, 80,0) 74%),
+    radial-gradient(28% 24% at 80% 97%, #9BAA6A 0%, rgba(155,170,106,0) 70%),
+    radial-gradient(46% 40% at 47% 73%, #EE7E86 0%, rgba(238,126,134,0) 74%),
+    radial-gradient(58% 52% at 90% 34%, #F3A69C 0%, rgba(243,166,156,0) 72%),
+    radial-gradient(56% 48% at 54% 46%, #F7C08E 0%, rgba(247,192,142,0) 74%),
+    radial-gradient(66% 52% at 40% 16%, #FCF8F1 0%, rgba(252,248,241,0) 72%),
+    radial-gradient(52% 82% at  1% 42%, #EFE9DE 0%, rgba(239,233,222,0) 66%);
+}
+
+/* legibility scrim */
+.about::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--about-bg);
+}
+
+.about > * { position: relative; z-index: 2; }
 .about-label {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -595,51 +756,72 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 }
 .footer-note { font-size: 14px; color: var(--text-2); }
 
-#theme-toggle {
-  cursor: pointer;
+/* Three-way theme switch. Native same-name radios, so arrow-key navigation
+   and the radiogroup role come for free — no keyboard handling in JS. */
+.theme-switch {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
   flex-shrink: 0;
 }
-#theme-toggle input { position:absolute; opacity:0; width:0; height:0; }
-.toggle-knob {
-  display: block;
-  width: 40px; height: 23px;
-  border-radius: 12px;
-  background: var(--rule);
-  position: relative;
-  transition: background .3s var(--ease);
-}
-.toggle-knob::after {
-  content: '';
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 17px; height: 17px;
+.theme-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.theme-switch label {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--text-2);
-  transition: transform .3s var(--ease), background .3s var(--ease);
+  cursor: pointer;
+  color: var(--text-2);
+  transition: background .2s var(--ease), color .2s var(--ease);
 }
-#theme-toggle input:checked ~ .toggle-knob::after { transform: translateX(17px); }
-#theme-toggle input:focus-visible ~ .toggle-knob { outline: 3px solid var(--focus); outline-offset: 2px; }
+.theme-switch label svg { width: 15px; height: 15px; display: block; }
+.theme-switch label:hover { color: var(--text); }
+.theme-switch input:checked + label { background: var(--text); color: var(--bg); }
+.theme-switch input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 /* ══════════════════════════════════════ narrow screens ══════════════ */
 
+/* ── tablet ── iPad portrait lands on the 2-column grid above; just tighten
+   the vertical rhythm so the first card row still peeks above the fold. */
+@media (max-width: 900px) {
+  .hero { padding-top: clamp(56px, 10vh, 120px); padding-bottom: clamp(48px, 7vh, 96px); }
+  .section-gap { height: 68px; }
+}
+
 @media (max-width: 640px) {
-  .wrap { padding: 0 20px; }
-  .topbar-inner { padding: 12px 20px; }
+  .wrap {
+    padding-left:  max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  .topbar-inner { padding-left: max(20px, env(safe-area-inset-left));
+                  padding-right: max(20px, env(safe-area-inset-right)); }
   .topbar-links { gap: 14px; }
   .topbar-links a { font-size: 13px; }
   .hero-sub { font-size: 17px; }
-  .section-gap { height: 60px; }
-  .about { padding: 48px 0; }
+  .section-gap { height: 56px; }
+  .about { margin: 52px 0; }
   .about-body { font-size: 18px; }
+  .footer { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
 }
 
 /* At 320px, 12vw is far below the 64px floor, so the floor itself has to
    come down or the hero overflows the viewport horizontally. */
 @media (max-width: 420px) {
   .hero-title { font-size: clamp(46px, 15vw, 64px); }
-  .topbar-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .topbar-name { font-size: 14px; }
+  .topbar-links { gap: 12px; }
+  .topbar-links a { font-size: 12px; }
+  .theme-switch label { width: 26px; height: 26px; }
+}
+
+/* Short landscape phones: the hero must not eat the whole viewport. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .hero { padding-top: 40px; padding-bottom: 36px; }
+  .hero-title { font-size: clamp(44px, 9vh, 88px); }
 }
 
 /* ══════════════════════════════════════ reduced motion ══════════════ */
@@ -653,7 +835,7 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
   .grid.has-open .card:not(.is-open) { transition: none; }
   .card:hover { box-shadow: 0 0 0 2px var(--card-fg); }
   .panel { transition: none; }
-  .toggle-knob, .toggle-knob::after { transition: none; }
+  .theme-switch label { transition: none; }
 }
 </style>
 </head>
@@ -663,18 +845,47 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 
 <header class="topbar">
   <div class="topbar-inner">
-    <span class="topbar-name">Karamjot Singh</span>
+    <span class="brand">
+      <!-- Signature mark: a five-pointed star drawn as one continuous stroke,
+           with the final closing segment left off — the open figure reads as a
+           rotated K. The same path is duplicated in the two <link rel="icon">
+           data URIs above; change all three together. -->
+      <span class="brand-mark">
+        <svg viewBox="0 0 64 64" fill="none" stroke-width="4.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M33 5Q30 31.5 15.7 54Q40.7 43.7 58.2 23Q32 17 6.3 25Q29.7 35.2 45.8 55"/>
+        </svg>
+      </span>
+      <span class="topbar-name">Karamjot Singh</span>
+    </span>
     <div class="topbar-right">
       <nav class="topbar-links" aria-label="Profiles">
         <a href="https://github.com/karam-nus" target="_blank" rel="noopener">GitHub ↗</a>
         <a href="https://huggingface.co/karamjotsingh" target="_blank" rel="noopener">HuggingFace ↗</a>
-        <a href="https://www.linkedin.com/in/karamjot-singh-nus/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="https://www.linkedin.com/in/karamjotsinghmalik/" target="_blank" rel="noopener">LinkedIn ↗</a>
       </nav>
-      <label id="theme-toggle" title="Toggle light/dark theme">
-        <span class="sr-only">Dark theme</span>
-        <input type="checkbox" id="theme-toggle-input">
-        <span class="toggle-knob"></span>
-      </label>
+      <div class="theme-switch" role="radiogroup" aria-label="Colour theme">
+        <input type="radio" name="theme" id="th-light" value="light">
+        <label for="th-light" title="Light"><span class="sr-only">Light</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/>
+            <path d="M12 2.4v2.2M12 19.4v2.2M2.4 12h2.2M19.4 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/>
+          </svg></label>
+
+        <input type="radio" name="theme" id="th-sepia" value="sepia">
+        <label for="th-sepia" title="Sepia"><span class="sr-only">Sepia</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               aria-hidden="true"><circle cx="12" cy="12" r="8.2"/>
+            <path d="M12 3.8a8.2 8.2 0 010 16.4z" fill="currentColor" stroke="none"/>
+          </svg></label>
+
+        <input type="radio" name="theme" id="th-dark" value="dark">
+        <label for="th-dark" title="Dark"><span class="sr-only">Dark</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.5 14.6A8.8 8.8 0 019.4 3.5a8.8 8.8 0 1011.1 11.1z"/>
+          </svg></label>
+      </div>
     </div>
   </div>
 </header>
@@ -705,15 +916,15 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 
   <div class="wrap">
     <section class="about" aria-labelledby="about-label">
-      <hr class="about-rule">
-      <div class="about-label" id="about-label" style="margin-top:64px">About</div>
+      <div class="about-label" id="about-label">About</div>
       <p class="about-body">
-        AI Research Scientist at Renesas Electronics&rsquo; HPC AI R&amp;D team in Singapore, building model
-        training, quantization and tuning frameworks for automotive AI &mdash; CNNs, ViTs and LLMs alike.
+        I&rsquo;m an AI Research Scientist on Renesas Electronics&rsquo; HPC AI R&amp;D team in Singapore,
+        where I build the model training, quantization and tuning frameworks behind automotive AI
+        &mdash; CNNs, ViTs and LLMs alike.
       </p>
       <p class="about-body">
-        Previously four years as a Senior ML Engineer at OmniVision Technologies shipping edge computer
-        vision. MTech in Intelligent Systems, NUS.
+        Before that I spent four years as a Senior ML Engineer at OmniVision Technologies, shipping
+        computer vision to the edge. I did my MTech in Intelligent Systems at NUS.
       </p>
     </section>
   </div>
@@ -722,7 +933,7 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 
 <footer class="wrap">
   <div class="footer">
-    <span class="footer-note">&copy; Karamjot Singh &middot; built on GitHub Pages</span>
+    <span class="footer-note">&copy; Karamjot Singh &middot; 2026</span>
   </div>
 </footer>
 
@@ -731,8 +942,9 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
    DATA
    Each repo carries its chapter index plus three presentation fields:
      blurb  — the card's one-liner
-     color  — palette token (ink lands on every 4th slot: index % 4 === 2,
-              so each full desktop row gets exactly one near-black card)
+     color  — palette token. Hues are spread so no two neighbours in a
+              desktop row sit close on the wheel; `ink` is used once, as the
+              single near-black anchor in the first row.
      status — 'live' | 'wip'
    `u: null` means the chapter is planned but not written; it renders dim
    and non-clickable inside the expanded index.
@@ -1033,7 +1245,7 @@ const repos = [
     ]
   },
   {
-    id:'software', label:'Software Engineering', color:'ink', status:'live',
+    id:'software', label:'Software Engineering', color:'teal', status:'live',
     blurb:'Scripts to production — engineering practice for ML practitioners',
     url:'https://karam-nus.github.io/software/',
     base:'https://karam-nus.github.io/software/',
@@ -1197,7 +1409,7 @@ const repos = [
     ]
   },
   {
-    id:'code', label:'Code', color:'ink', status:'live',
+    id:'code', label:'Code', color:'butter', status:'live',
     blurb:'Package-by-package ML coding reference — copy-paste-ready patterns',
     url:'https://karam-nus.github.io/code/',
     base:'https://karam-nus.github.io/code/',
@@ -1264,7 +1476,6 @@ const repos = [
   { id:'networking',         label:'Networking',          status:'wip', blurb:'Static IPs, multi-GPU fabrics, DGX Spark QSFP setup' },
   { id:'vectorization',      label:'Vectorization',       status:'wip', blurb:'SIMD, batching and vectorized numerical code' },
   { id:'programming',        label:'Programming',         status:'wip', blurb:'Metaprogramming and dynamic programming' },
-  { id:'setup',              label:'Setup',               status:'wip', blurb:'Reproducible macOS and Ubuntu machine setup — scripts and guides' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1275,6 +1486,47 @@ const live = repos.filter(r => r.status === 'live');
 const wip  = repos.filter(r => r.status === 'wip');
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ── brand intro: measure the real travel, then roll the mark that far ──
+   Runs first, and this script is parser-blocking at the end of <body>, so the
+   measured values land before the first paint. If anything here fails the CSS
+   defaults still produce a good-looking roll. */
+(function () {
+  if (reduceMotion.matches) return;
+  const brand = document.querySelector('.brand');
+  const name  = document.querySelector('.topbar-name');
+  const mark  = document.querySelector('.brand-mark');
+  if (!brand || !name || !mark) return;
+
+  function measure() {
+    const gap = parseFloat(getComputedStyle(brand).columnGap) || 10;
+    const travel = name.getBoundingClientRect().width + gap;
+    const radius = mark.getBoundingClientRect().width / 2;
+    if (!travel || !radius) return;
+    /* a wheel rolling distance d turns d/r radians */
+    const spin = (travel / radius) * (180 / Math.PI);
+    brand.style.setProperty('--brand-travel', travel.toFixed(1) + 'px');
+    brand.style.setProperty('--brand-spin', spin.toFixed(1) + 'deg');
+  }
+
+  measure();
+
+  /* Space Grotesk swaps in after the fallback, changing the name's width. If
+     that happens before the animation starts, re-measure and restart so the
+     roll still matches the final layout. */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (performance.now() > 400) return;   /* too late; leave it alone */
+      measure();
+      [mark, name].forEach(el => {
+        const a = el.style.animation;
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = a || '';
+      });
+    }).catch(() => {});
+  }
+}());
 
 /* The scope badge is derived from the data so it can never drift. */
 const chapterCount = r =>
@@ -1564,27 +1816,48 @@ requestAnimationFrame(() => {
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
   const dots = document.getElementById('dots');
-  if (!dots || reduceMotion.matches) return;
+  if (!dots) return;
 
-  let sy = 0, mx = 0, my = 0, spot = 0, queued = false;
+  const TILE = 26;            /* must match background-size */
+  const DRIFT_X = 3.6;        /* px per second, rightward */
+  const DRIFT_Y = 2.2;        /* px per second, downward   */
+  const PARALLAX = 0.15;      /* fraction of scroll distance */
 
+  let sy = window.scrollY, mx = 0, my = 0, spot = 0;
+  let running = false, t0 = 0, elapsed = 0;
+
+  /* Positions are wrapped to one tile, so the numbers stay small no matter
+     how long the page has been open or how far it has been scrolled. */
   function paint() {
-    queued = false;
-    /* the grid slides at a fraction of scroll speed, wrapped to the 24px
-       tile so the offset can never grow unbounded on a long page */
-    dots.style.setProperty('--par', (-sy * 0.15) % 24 + 'px');
+    const x = (elapsed * DRIFT_X) % TILE;
+    const y = ((elapsed * DRIFT_Y) - (sy * PARALLAX)) % TILE;
+    dots.style.setProperty('--bx', x.toFixed(2) + 'px');
+    dots.style.setProperty('--by', y.toFixed(2) + 'px');
     dots.style.setProperty('--mx', mx + 'px');
     dots.style.setProperty('--my', my + 'px');
     dots.style.setProperty('--spot', spot);
   }
-  function schedule() {
-    if (!queued) { queued = true; requestAnimationFrame(paint); }
+
+  function frame(ts) {
+    if (!running) return;
+    if (!t0) t0 = ts;
+    elapsed = (ts - t0) / 1000;
+    paint();
+    requestAnimationFrame(frame);
   }
 
-  window.addEventListener('scroll', () => { sy = window.scrollY; schedule(); }, { passive: true });
+  function start() {
+    if (running || reduceMotion.matches) return;
+    running = true;
+    t0 = 0;                            /* resume from where the clock left off */
+    requestAnimationFrame(ts => { t0 = ts - elapsed * 1000; frame(ts); });
+  }
+  function stop() { running = false; }
 
-  /* Spotlight needs a real hovering pointer and mask support. Skip it on
-     touch, where there is no cursor to follow. */
+  /* Scroll only needs to update the input; the loop is already painting. */
+  window.addEventListener('scroll', () => { sy = window.scrollY; }, { passive: true });
+
+  /* Spotlight needs a real hovering pointer and mask support. */
   const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
   const canMask = CSS.supports('mask-image', 'radial-gradient(#000,#000)') ||
                   CSS.supports('-webkit-mask-image', 'radial-gradient(#000,#000)');
@@ -1592,33 +1865,46 @@ requestAnimationFrame(() => {
   if (fine.matches && canMask) {
     window.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse') return;
-      mx = e.clientX; my = e.clientY; spot = 1; schedule();
+      mx = e.clientX; my = e.clientY; spot = 1;
     }, { passive: true });
-    document.addEventListener('pointerleave', () => { spot = 0; schedule(); });
-    window.addEventListener('blur', () => { spot = 0; schedule(); });
+    document.addEventListener('pointerleave', () => { spot = 0; });
+    window.addEventListener('blur', () => { spot = 0; });
   }
 
-  sy = window.scrollY;
+  /* Never animate an invisible tab. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+  reduceMotion.addEventListener('change', () => {
+    if (reduceMotion.matches) { stop(); elapsed = 0; sy = 0; paint(); } else start();
+  });
+
   paint();
+  start();
 }());
 
 /* ── theme toggle ── */
 (function () {
-  const input = document.getElementById('theme-toggle-input');
   const html = document.documentElement;
+  const THEMES = ['light', 'sepia', 'dark'];
+  const inputs = Array.from(document.querySelectorAll('input[name="theme"]'));
+
   function apply(theme) {
-    if (theme === 'dark') html.dataset.theme = 'dark';
-    else delete html.dataset.theme;
-    input.checked = (theme === 'dark');
+    /* light is the default and carries no attribute */
+    if (theme === 'light') delete html.dataset.theme;
+    else html.dataset.theme = theme;
+    inputs.forEach(i => { i.checked = (i.value === theme); });
   }
+
   let stored = null;
   try { stored = localStorage.getItem('theme'); } catch (e) { /* no-op */ }
-  apply(stored === 'dark' ? 'dark' : 'light');
-  input.addEventListener('change', function () {
-    const next = this.checked ? 'dark' : 'light';
-    try { localStorage.setItem('theme', next); } catch (e) { /* no-op */ }
-    apply(next);
-  });
+  apply(THEMES.indexOf(stored) > -1 ? stored : 'light');
+
+  inputs.forEach(i => i.addEventListener('change', () => {
+    if (!i.checked) return;
+    try { localStorage.setItem('theme', i.value); } catch (e) { /* no-op */ }
+    apply(i.value);
+  }));
 }());
 </script>
 </body>
