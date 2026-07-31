@@ -85,7 +85,16 @@
      neutral instead. */
   --c-ink-panel: #9B9B97;
 
-  /* ── work-in-progress card surface ── */
+  /* ── work-in-progress card surface ──
+     --wip-glass is the lens; --wip-surface is the opaque fallback used when
+     backdrop-filter is unavailable or the user has asked for less
+     transparency. The gradient's 0.62 floor is the AA contrast limit against
+     the darkest part of the banner — see the note above .card-wip. */
+  --wip-glass: linear-gradient(148deg,
+                 rgba(255,255,255,.72) 0%,
+                 rgba(255,255,255,.64) 46%,
+                 rgba(255,255,255,.62) 100%);
+  --wip-glass-edge: rgba(255,255,255,.58);
   --wip-surface: #E9E9E7;
   --wip-text:    #33332F;
 
@@ -641,17 +650,66 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
 /* The gradient belongs to the section, not to the cards. Grey cards sit on
    top of it, exactly as in the reference banner. The banner reads the same
    in both themes, so the card colours are theme-independent. */
+/* Mesh gradient — six soft blobs pulling from every corner at once, so the
+   colour reads as flowing in all directions rather than along one axis.
+   Two families only: teal running from near-black petrol up through cyan and
+   sea green, resolving into ochre and gold at the far corner. Depth comes
+   from the luminance spread (0.056 -> 0.573, a 10x range), not from hue
+   variety — that is what keeps it from reading as a pastel rainbow.
+
+   The top vignette is structural, not decorative. Gold at 0.573 luminance
+   drops white text to 1.69:1, so no single heading colour is safe across the
+   whole field; darkening the top band pins the heading's zone at 9.6:1
+   regardless of which blob drifts into it. */
 .wip-banner {
   position: relative;
   border-radius: 24px;
   padding: clamp(28px, 4vw, 48px);
-  background: linear-gradient(115deg,#7FD5D0 0%,#9FD9A8 28%,#EFC489 62%,#C9B6F2 100%);
+  background-color: #06262E;
+  background-image:
+    linear-gradient(180deg, rgba(3,18,22,.5) 0%, rgba(3,18,22,0) 32%),
+    radial-gradient(56% 58% at 96% 90%, #E3C64E 0%, rgba(227,198, 78,0) 60%),
+    radial-gradient(46% 44% at 78% 70%, #B99A2A 0%, rgba(185,154, 42,0) 62%),
+    radial-gradient(50% 48% at 90% 12%, #12888A 0%, rgba( 18,136,138,0) 60%),
+    radial-gradient(52% 56% at  6% 92%, #1A9A86 0%, rgba( 26,154,134,0) 62%),
+    radial-gradient(62% 58% at 48% 48%, #146E62 0%, rgba( 20,110, 98,0) 68%),
+    radial-gradient(70% 65% at 14%  8%, #0B4A55 0%, rgba( 11, 74, 85,0) 66%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
 }
-.wip-banner .section-title { color: #16232B; margin-bottom: 28px; }
+/* Safe because of the vignette above, not on its own merits. */
+.wip-banner .section-title { color: #FFFFFF; margin-bottom: 28px; }
 
+/* Liquid glass: the card is a lens over the banner, not a panel pasted onto
+   it. Four things together make it read as glass rather than as a washed-out
+   rectangle, and dropping any one of them breaks the effect:
+
+     1. A translucent fill that is brighter at the top-left than the bottom,
+        so the sheet looks lit from one side rather than uniformly tinted.
+     2. backdrop-filter blur + saturate. The blur is the frosting; the
+        saturate is what makes the teal and gold underneath bloom through
+        instead of going muddy, which is the single biggest difference
+        between this and a plain white overlay at low opacity.
+     3. A bright inset line along the top edge and a hairline border — the
+        specular catch on a real bevelled edge.
+     4. A two-part drop shadow: a tight contact shadow plus a wide soft one.
+
+   The fill floor is 0.62 white, not lower, because that is the point at which
+   #33332F still clears WCAG AA over the darkest part of the mesh gradient
+   (#06262E): 5.48:1 for the title, 4.74:1 for the description. The gradient
+   runs 0.72 -> 0.62, so 0.62 is the worst case anywhere on the card. */
 .card-wip {
-  background: var(--wip-surface);
+  position: relative;
+  isolation: isolate;
   color: var(--wip-text);
+  background: var(--wip-glass);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--wip-glass-edge);
+  box-shadow:
+    0 2px 6px rgba(8,4,20,.20),
+    0 14px 36px rgba(8,4,20,.30),
+    inset 0 1px 0 rgba(255,255,255,.85),
+    inset 0 -1px 0 rgba(255,255,255,.22);
   border-radius: 16px;
   padding: 28px 26px 24px;
   min-height: 220px;
@@ -660,12 +718,56 @@ html[data-theme="dark"] .card.is-open { box-shadow: inset 0 0 0 2px rgba(255,255
   justify-content: flex-start;
   cursor: default;
 }
+
+/* The specular sheen. Kept as a pseudo-element rather than another background
+   layer so it can sit above the fill but below the copy. */
+.card-wip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 72% at 10% -20%, rgba(255,255,255,.50) 0%, rgba(255,255,255,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 28%);
+}
+
+.card-wip .card-body { z-index: 1; }
 .card-wip .card-title { font-size: 28px; padding-right: 0; min-height: 0; }
-.card-wip .card-desc { font-size: 16px; min-height: 0; opacity: .82; }
+/* .82 on the live cards, but those sit on an opaque surface. On glass the
+   backdrop shows through the ink too, so .82 falls to 3.94:1 — under AA.
+   .92 puts it back at 4.74:1. */
+.card-wip .card-desc { font-size: 16px; min-height: 0; opacity: .92; }
+
+/* Safari before 18 and Firefox before 103 have no backdrop-filter. Without
+   the blur the translucency just looks like a faded card, so go opaque. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card-wip { background: var(--wip-surface); }
+  .card-wip::before { opacity: .45; }
+}
+
+/* Respect the OS-level "Reduce Transparency" accessibility setting, which is
+   what a user who finds glass hard to read will have turned on. */
+@media (prefers-reduced-transparency: reduce) {
+  .card-wip {
+    background: var(--wip-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .card-wip::before { display: none; }
+  .card-wip .card-desc { opacity: .82; }
+}
 
 @media (max-width: 600px) {
   .card-wip { min-height: 180px; padding: 24px 22px 20px; }
   .card-wip .card-title { font-size: 25px; }
+  /* Large blur radii are expensive to composite on phones and the cards are
+     full-width there, so the effect is barely visible anyway. */
+  .card-wip {
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    backdrop-filter: blur(20px) saturate(170%);
+  }
 }
 
 /* ══════════════════════════════════════ 6. about ════════════════════ */
